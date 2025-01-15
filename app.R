@@ -50,31 +50,39 @@ d_powiat <- d_powiat %>%
                            "wałbrzych od 2013" = "wałbrzych"))
 
 # making the join
-d_powiat_full <- powiaty %>%
-    full_join(d_powiat, by = c("JPT_NAZWA_" = "region"))
+
 
 
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
-
+    includeCSS("style.css"),
+    shinyWidgets::setBackgroundColor(
+        color = c("#70e000","#ccff33","#F3FFCC","white"),
+        gradient = c("radial"),
+        direction = c("bottom", "left"),
+        shinydashboard = FALSE
+    ),
     # Application title
-    titlePanel("Old Faithful Geyser Data"),
-
+    titlePanel("Średnie pensje na poziomie Powiatu"),
+    
     # Sidebar with a slider input for number of bins 
     sidebarLayout(
         sidebarPanel(
-            sliderInput("rok",
+            "Ta aplikacja pozwala sprawdzić średnie pensje na poziomie powiatów od 2002 do 2023 roku.",
+            selectInput("rok",
                         "Rok:",
-                        min = 2002,
-                        max = 2023,
-                        value = 2023, 
-                        sep = NULL)
+                        choices = seq(2002, 2023, 1),
+                        selected = 2023
+                        )
         ),
 
         # Show a plot of the generated distribution
         mainPanel(
-           girafeOutput("mapPlot")
+            shinycssloaders::withSpinner(
+                girafeOutput("mapPlot"),
+                color = "#004b23"
+                )
         )
     )
 )
@@ -82,23 +90,29 @@ ui <- fluidPage(
 # Define server logic required to draw a histogram
 server <- function(input, output) {
     
-    
+    filtered <- reactive(paste0("wage_", input$rok))
     
     
     output$mapPlot <- renderGirafe({
-        filtered <- paste0("wage_", input$rok)
-        d_powiat_full$wage <- as.numeric(unlist(d_powiat_full[, "wage_2023"]))
+        
+        d_powiat$wage <- as.numeric(unlist(d_powiat[, filtered()]))
+        
+        d_powiat_full <- powiaty %>%
+            full_join(d_powiat, by = c("JPT_NAZWA_" = "region"),
+                      relationship = "many-to-many")
         
         map_final_interactive <- ggplot(d_powiat_full) +
             geom_sf_interactive(aes(fill = wage, tooltip = paste0(JPT_NAZWA_,": ",wage))) +
             scale_fill_gradient(low ="#ccff33", high = "#004b23",
                                 breaks = c(0, 
                                            round(mean(d_powiat_full$wage, na.rm = T), -3),
-                                           round(max(d_powiat_full$wage, na.rm = T), -3))
+                                           round(max(d_powiat_full$wage, na.rm = T) - 500, -3))
                                 ) +
             labs(fill = "średnia pensja") +
             theme_void() +
-            theme(legend.position = "top")
+            theme(legend.position = "top",
+                  panel.background = element_rect(fill = NA, color = NA),
+                  plot.background = element_rect(fill = NA, color = NA))
         
         
         girafe(ggobj = map_final_interactive)
