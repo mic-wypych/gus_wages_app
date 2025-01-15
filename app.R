@@ -75,7 +75,8 @@ ui <- fluidPage(
                         "Rok:",
                         choices = seq(2002, 2023, 1),
                         selected = 2023
-                        )
+                        ),
+            textOutput("summary")
         ),
 
         # Show a plot of the generated distribution
@@ -94,6 +95,17 @@ server <- function(input, output) {
     
     filtered <- reactive(paste0("wage_", input$rok))
     
+    output$summary <- renderText({
+        d_powiat$wage <- as.numeric(unlist(d_powiat[, filtered()], use.names = FALSE))
+        
+        text <- glue::glue("Powiat z najwyższą pensją: {d_powiat[which.max(d_powiat$wage), c('region')]}
+                           z pensją {max(d_powiat$wage, na.rm=T)}<br />
+                           Powiat z najmniejszą pensją: {d_powiat[which.min(d_powiat$wage), c('region')]}
+                           z pensją {min(d_powiat$wage, na.rm=T)}")
+        text
+        
+        
+    })
     
     output$mapPlot <- renderGirafe({
         
