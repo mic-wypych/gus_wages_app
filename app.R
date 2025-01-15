@@ -13,7 +13,8 @@ library(ggplot2)
 library(ggiraph)
 library(dplyr)
 library(stringr)
-
+library(gt)
+library(gtExtras)
 
 powiaty <- read_sf("data/powiaty.shp")
 d <- readxl::read_excel("data/dane_gus_powiat.xlsx", sheet = 2, skip = 1)
@@ -80,9 +81,10 @@ ui <- fluidPage(
         # Show a plot of the generated distribution
         mainPanel(
             shinycssloaders::withSpinner(
-                girafeOutput("mapPlot"),
+                girafeOutput("mapPlot", height = "75%", width = "75%"),
                 color = "#004b23"
-                )
+                ),
+            gt_output("powiatTable")
         )
     )
 )
@@ -95,7 +97,7 @@ server <- function(input, output) {
     
     output$mapPlot <- renderGirafe({
         
-        d_powiat$wage <- as.numeric(unlist(d_powiat[, filtered()]))
+        d_powiat$wage <- as.numeric(unlist(d_powiat[, filtered()], use.names = FALSE))
         
         d_powiat_full <- powiaty %>%
             full_join(d_powiat, by = c("JPT_NAZWA_" = "region"),
@@ -124,6 +126,37 @@ server <- function(input, output) {
                    opts_hover(css = girafe_css(css = "fill:#283618;stroke:black;")),
                    opts_hover_inv(css = "opacity:0.4;")
                ))
+    })
+    
+    output$powiatTable <- render_gt({
+        d_powiat %>%
+            mutate(across(`2002`:`2023`, as.numeric)) %>%
+            select(region, `2002`:`2023`) %>%
+            pivot_longer(`2002`:`2023`,names_to = "rok", values_to = "wage") %>%
+            mutate(rok = as.numeric(rok)) %>%
+            group_by(region) %>%
+            summarise(`minimalna pensja` = paste(min(wage), "zł"),
+                      `średnia pensja` = paste(round(mean(wage),2), "zł"),
+                      `najwyższa pensja` = paste(max(wage), "zł"),
+                      `zmiana 2002-2023` = list(wage),
+                      .groups = "drop") %>%
+            arrange(region) %>%
+            gt() %>%
+            gtExtras::gt_plt_sparkline(`zmiana 2002-2023`,
+                                       palette = c("#004b23", "black", "#70e000", "#ccff33", "grey60")) %>%
+            fmt_markdown(columns = c("zmiana 2002-2023")) %>%
+            tab_options(
+                
+                table.background.color = "#FFFFFF00"
+            ) %>%
+            opt_table_font(font = google_font("Space Grotesk"),
+                           color = "black",
+                           weight = "bold") %>%
+            opt_interactive(
+                use_sorting = FALSE,
+                use_filters = TRUE,
+                use_compact_mode = TRUE
+            )
     })
 }
 
