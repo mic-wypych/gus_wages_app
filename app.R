@@ -102,7 +102,10 @@ server <- function(input, output) {
                       relationship = "many-to-many")
         
         map_final_interactive <- ggplot(d_powiat_full) +
-            geom_sf_interactive(aes(fill = wage, tooltip = paste0(JPT_NAZWA_,": ",wage))) +
+            geom_sf_interactive(aes(fill = wage,
+                                    tooltip = paste0(JPT_NAZWA_,": ",wage),
+                                    data_id = JPT_NAZWA_),
+                                ) +
             scale_fill_gradient(low ="#ccff33", high = "#004b23",
                                 breaks = c(0, 
                                            round(mean(d_powiat_full$wage, na.rm = T), -3),
@@ -115,7 +118,12 @@ server <- function(input, output) {
                   plot.background = element_rect(fill = NA, color = NA))
         
         
-        girafe(ggobj = map_final_interactive)
+        girafe(ggobj = map_final_interactive, 
+               bg = "transparent",
+               options = list(
+                   opts_hover(css = girafe_css(css = "fill:#283618;stroke:black;")),
+                   opts_hover_inv(css = "opacity:0.4;")
+               ))
     })
 }
 
