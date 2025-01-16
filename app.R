@@ -15,6 +15,7 @@ library(dplyr)
 library(stringr)
 library(gt)
 library(gtExtras)
+library(tidyr)
 
 powiaty <- read_sf("data/powiaty.shp")
 d <- readxl::read_excel("data/dane_gus_powiat.xlsx", sheet = 2, skip = 1)
