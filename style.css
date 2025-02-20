@@ -7,3 +7,8 @@ body {
 h1 {
   font-weight: "bold";
 }
+
+.shiny-html-output {
+  width: "100%";
+  height: "100%";
+}

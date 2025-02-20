@@ -45,7 +45,7 @@ ui <- fluidPage(
       girafeOutput("hist", width = "100%", height = "400px")
     ),
     mainPanel(
-      shinycssloaders::withSpinner(uiOutput("inc", fill = TRUE), color = "#004b23"),
+      shinycssloaders::withSpinner(uiOutput("inc"), color = "#004b23"),
       gt_output("powiatTable"),
       
     )
@@ -81,15 +81,16 @@ server <- function(input, output, session) {
     min_powiat <- data %>% filter(!is.na(wage)) %>% slice_min(wage, n = 1)
     
     glue::glue(
-      "Powiat z najwyższą pensją: {max_powiat$region} z pensją {max_powiat$wage} zł <br />
-             Powiat z najmniejszą pensją: {min_powiat$region} z pensją {min_powiat$wage} zł"
+      "Powiat z najwyższą pensją: {max_powiat$region} z pensją {max_powiat$wage} zł\n
+             Powiat z najmniejszą pensją: {min_powiat$region} z pensją {min_powiat$wage} zł\n"
     )
   })
   
   output$inc <- renderUI({
-    tags$iframe(
+      tags$iframe(
       src = paste0("./maps/", selected_wage(), ".html"),
-      width = "90%", height = "500px", style = "border:none;"
+      width = "100%", height = "100%",frameborder = "0",
+      scrolling = "no", style = "border:none; overflow:hidden"
     )
   })
   
