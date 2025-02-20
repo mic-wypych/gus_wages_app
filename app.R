@@ -1,12 +1,3 @@
-#
-# This is a Shiny web application. You can run the application by clicking
-# the 'Run App' button above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    https://shiny.posit.co/
-#
-
 library(shiny)
 library(sf)
 library(ggplot2)
@@ -16,162 +7,110 @@ library(stringr)
 library(gt)
 library(gtExtras)
 library(tidyr)
+library(htmltools)
 
-powiaty <- read_sf("data/powiaty.shp")
-d <- readxl::read_excel("data/dane_gus_powiat.xlsx", sheet = 2, skip = 1)
-d <- d[-1,]
-d <- d %>%
-    rename("code" = `...1`,
-           "region" = `...2`)
+# Load spatial data
+powiaty <- read_sf("data/powiaty.shp") %>%
+  mutate(JPT_NAZWA_ = tolower(str_remove(trimws(JPT_NAZWA_), "powiat")))
 
-d <- d %>%
-    mutate(across(`2002`:`2023`, .names = "wage_{.col}"))
+# Load wages data
+d <- readxl::read_excel("data/dane_gus_powiat.xlsx", sheet = 2, skip = 1) %>%
+  slice(-1) %>%
+  rename("code" = `...1`, "region" = `...2`) %>%
+  mutate(across(`2002`:`2023`, as.numeric, .names = "wage_{.col}")) 
 
+# Filter for powiat-level data and clean names
 d_powiat <- d %>%
-    filter(grepl("Powiat.*", region))
+  filter(str_detect(region, "Powiat")) %>%
+  mutate(region = tolower(str_remove_all(region, "powiat| m\\. st\\.| m\\.")) %>%
+           trimws()) %>%
+  mutate(region = recode(region, "wałbrzych od 2013" = "wałbrzych",
+                         "wałbrzych do 2002" = "wałbrzych"))
 
-
-
-#yay this works!
-#now All we need is to link powiaty to data on wages and
-#then add information with some interactive thing like plotly etc.!
-
-powiaty$JPT_NAZWA_ <- tolower(powiaty$JPT_NAZWA_)
-d_powiat$region <- tolower(d_powiat$region)
-d_powiat$region <- str_remove(d_powiat$region , " m\\. st\\.")
-
-d_powiat$region <- str_remove(d_powiat$region , " m\\.")
-d_powiat$region <- str_remove(d_powiat$region , "powiat")
-powiaty$JPT_NAZWA_ <- str_remove(powiaty$JPT_NAZWA_, "powiat")
-
-d_powiat$region <- trimws(d_powiat$region)
-powiaty$JPT_NAZWA_ <- trimws(powiaty$JPT_NAZWA_)
-
-d_powiat <- d_powiat %>%
-    mutate(region = recode(region,
-                           "wałbrzych od 2013" = "wałbrzych"))
-
-# making the join
-
-
-
-
-# Define UI for application that draws a histogram
+# UI
 ui <- fluidPage(
-    includeCSS("style.css"),
-    shinyWidgets::setBackgroundColor(
-        color = c("#70e000","#ccff33","#F3FFCC","white"),
-        gradient = c("radial"),
-        direction = c("bottom", "left"),
-        shinydashboard = FALSE
+  includeCSS("style.css"),
+  shinyWidgets::setBackgroundColor(
+    color = c("#70e000", "#ccff33", "#F3FFCC", "white"),
+    gradient = "radial",
+    direction = c("bottom", "left")
+  ),
+  titlePanel("Średnie pensje na poziomie Powiatu"),
+  
+  sidebarLayout(
+    sidebarPanel(
+      "Ta aplikacja pozwala sprawdzić średnie pensje na poziomie powiatów od 2002 do 2023 roku.",
+      selectInput("rok", "Rok:", choices = 2002:2023, selected = 2023),
+      textOutput("summary")
     ),
-    # Application title
-    titlePanel("Średnie pensje na poziomie Powiatu"),
-    
-    # Sidebar with a slider input for number of bins 
-    sidebarLayout(
-        sidebarPanel(
-            "Ta aplikacja pozwala sprawdzić średnie pensje na poziomie powiatów od 2002 do 2023 roku.",
-            selectInput("rok",
-                        "Rok:",
-                        choices = seq(2002, 2023, 1),
-                        selected = 2023
-                        ),
-            textOutput("summary")
-        ),
-
-        # Show a plot of the generated distribution
-        mainPanel(
-            shinycssloaders::withSpinner(
-                girafeOutput("mapPlot", height = "75%", width = "75%"),
-                color = "#004b23"
-                ),
-            gt_output("powiatTable")
-        )
+    mainPanel(
+      shinycssloaders::withSpinner(uiOutput("inc", fill = TRUE), color = "#004b23"),
+      gt_output("powiatTable")
     )
+  )
 )
 
-# Define server logic required to draw a histogram
-server <- function(input, output) {
+# Server
+server <- function(input, output, session) {
+  selected_wage <- reactive({
+    paste0("wage_", input$rok)
+  })
+  
+  d_powiat_filtered <- reactive({
+    d_powiat %>%
+      mutate(wage = as.numeric(replace_na(.data[[selected_wage()]], 0))) # Ensure numeric column
+  })
+  
+  output$summary <- renderText({
+    data <- d_powiat_filtered()
     
-    filtered <- reactive(paste0("wage_", input$rok))
+    max_powiat <- data %>% filter(!is.na(wage)) %>% slice_max(wage, n = 1)
+    min_powiat <- data %>% filter(!is.na(wage)) %>% slice_min(wage, n = 1)
     
-    output$summary <- renderText({
-        d_powiat$wage <- as.numeric(unlist(d_powiat[, filtered()], use.names = FALSE))
-        
-        text <- glue::glue("Powiat z najwyższą pensją: {d_powiat[which.max(d_powiat$wage), c('region')]}
-                           z pensją {max(d_powiat$wage, na.rm=T)}<br />
-                           Powiat z najmniejszą pensją: {d_powiat[which.min(d_powiat$wage), c('region')]}
-                           z pensją {min(d_powiat$wage, na.rm=T)}")
-        text
-        
-        
-    })
-    
-    output$mapPlot <- renderGirafe({
-        
-        d_powiat$wage <- as.numeric(unlist(d_powiat[, filtered()], use.names = FALSE))
-        
-        d_powiat_full <- powiaty %>%
-            full_join(d_powiat, by = c("JPT_NAZWA_" = "region"),
-                      relationship = "many-to-many")
-        
-        map_final_interactive <- ggplot(d_powiat_full) +
-            geom_sf_interactive(aes(fill = wage,
-                                    tooltip = paste0(JPT_NAZWA_,": ",wage),
-                                    data_id = JPT_NAZWA_),
-                                ) +
-            scale_fill_gradient(low ="#ccff33", high = "#004b23",
-                                breaks = c(0, 
-                                           round(mean(d_powiat_full$wage, na.rm = T), -3),
-                                           round(max(d_powiat_full$wage, na.rm = T) - 500, -3))
-                                ) +
-            labs(fill = "średnia pensja") +
-            theme_void() +
-            theme(legend.position = "top",
-                  panel.background = element_rect(fill = NA, color = NA),
-                  plot.background = element_rect(fill = NA, color = NA))
-        
-        
-        girafe(ggobj = map_final_interactive, 
-               bg = "transparent",
-               options = list(
-                   opts_hover(css = girafe_css(css = "fill:#283618;stroke:black;")),
-                   opts_hover_inv(css = "opacity:0.4;")
-               ))
-    })
-    
-    output$powiatTable <- render_gt({
-        d_powiat %>%
-            mutate(across(`2002`:`2023`, as.numeric)) %>%
-            select(region, `2002`:`2023`) %>%
-            pivot_longer(`2002`:`2023`,names_to = "rok", values_to = "wage") %>%
-            mutate(rok = as.numeric(rok)) %>%
-            group_by(region) %>%
-            summarise(`minimalna pensja` = paste(min(wage), "zł"),
-                      `średnia pensja` = paste(round(mean(wage),2), "zł"),
-                      `najwyższa pensja` = paste(max(wage), "zł"),
-                      `zmiana 2002-2023` = list(wage),
-                      .groups = "drop") %>%
-            arrange(region) %>%
-            gt() %>%
-            gtExtras::gt_plt_sparkline(`zmiana 2002-2023`,
-                                       palette = c("#004b23", "black", "#70e000", "#ccff33", "grey60")) %>%
-            fmt_markdown(columns = c("zmiana 2002-2023")) %>%
-            tab_options(
-                
-                table.background.color = "#FFFFFF00"
-            ) %>%
-            opt_table_font(font = google_font("Space Grotesk"),
-                           color = "black",
-                           weight = "bold") %>%
-            opt_interactive(
-                use_sorting = FALSE,
-                use_filters = TRUE,
-                use_compact_mode = TRUE
-            )
-    })
+    glue::glue(
+      "Powiat z najwyższą pensją: {max_powiat$region} z pensją {max_powiat$wage} zł <br />
+             Powiat z najmniejszą pensją: {min_powiat$region} z pensją {min_powiat$wage} zł"
+    )
+  })
+  
+  output$inc <- renderUI({
+    tags$iframe(
+      src = paste0("./maps/", selected_wage(), ".html"),
+      width = "90%", height = "500px", style = "border:none;"
+    )
+  })
+  
+  # output$mapPlot <- renderGirafe({
+  #   d_powiat_full <- powiaty %>%
+  #     full_join(d_powiat_filtered(), by = c("JPT_NAZWA_" = "region"))
+  #   
+  #   gg <- ggplot(d_powiat_full) +
+  #     geom_sf_interactive(aes(fill = wage, tooltip = paste0(JPT_NAZWA_, ": ", wage), data_id = JPT_NAZWA_)) +
+  #     scale_fill_gradient(low = "#ccff33", high = "#004b23", na.value = "grey80") +  # Handle missing values
+  #     labs(fill = "średnia pensja") +
+  #     theme_void() +
+  #     theme(legend.position = "top")
+  #   
+  #   girafe(ggobj = gg, bg = "transparent",
+  #          options = list(opts_hover(css = "fill:#283618;stroke:black;"), opts_hover_inv(css = "opacity:0.4;")))
+  # })
+  
+  output$powiatTable <- render_gt({
+    d_powiat_filtered() %>%
+      select(region, wage) %>%
+      group_by(region) %>%
+      summarise(
+        `minimalna pensja` = paste(min(wage, na.rm = TRUE), "zł"),
+        `średnia pensja` = paste(round(mean(wage, na.rm = TRUE), 2), "zł"),
+        `najwyższa pensja` = paste(max(wage, na.rm = TRUE), "zł"),
+        .groups = "drop"
+      ) %>%
+      arrange(region) %>%
+      gt() %>%
+      tab_options(table.background.color = "#FFFFFF00") %>%
+      opt_table_font(font = google_font("Space Grotesk"), color = "black", weight = "bold") %>%
+      opt_interactive(use_sorting = FALSE, use_filters = TRUE, use_compact_mode = TRUE)
+  })
 }
 
-# Run the application 
-shinyApp(ui = ui, server = server)
+shinyApp(ui = ui, server = server)              
