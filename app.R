@@ -41,11 +41,13 @@ ui <- fluidPage(
     sidebarPanel(
       "Ta aplikacja pozwala sprawdzić średnie pensje na poziomie powiatów od 2002 do 2023 roku.",
       selectInput("rok", "Rok:", choices = 2002:2023, selected = 2023),
-      textOutput("summary")
+      textOutput("summary"),
+      girafeOutput("hist", width = "100%", height = "400px")
     ),
     mainPanel(
       shinycssloaders::withSpinner(uiOutput("inc", fill = TRUE), color = "#004b23"),
-      gt_output("powiatTable")
+      gt_output("powiatTable"),
+      
     )
   )
 )
@@ -60,6 +62,17 @@ server <- function(input, output, session) {
     d_powiat %>%
       mutate(wage = as.numeric(replace_na(.data[[selected_wage()]], 0))) # Ensure numeric column
   })
+  
+  output$hist <- renderGirafe({
+    hist_plot <- d_powiat_filtered() %>%
+      ggplot() +
+      geom_histogram_interactive(aes(x = wage,tooltip =  paste0("[",round(..xmin..,2)," zł : ",round(..xmax..,2),"zł] ilość gmin: ",..count..), group = 1L), bins = 50, fill = "#70e000", color = "green4") +
+      labs(x = "pensja", y = "ilość gmin", title = glue::glue("rozkład pensji w roku {input$rok}")) +
+      theme_minimal()
+    girafe(ggobj = hist_plot, bg = "transparent",
+           options = list(opts_hover(css = "fill:#283618; stroke:black;"), opts_hover_inv(css = "opacity:0.4;")))
+  })
+  
   
   output$summary <- renderText({
     data <- d_powiat_filtered()
