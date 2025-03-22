@@ -41,11 +41,14 @@ ui <- fluidPage(
     sidebarPanel(
       "Ta aplikacja pozwala sprawdzić średnie pensje na poziomie powiatów od 2002 do 2023 roku.",
       selectInput("rok", "Rok:", choices = 2002:2023, selected = 2023),
-      textOutput("summary")
+      textOutput("summary"),
+      girafeOutput("hist", width = "100%", height = "400px")
     ),
     mainPanel(
-      shinycssloaders::withSpinner(uiOutput("inc", fill = TRUE), color = "#004b23"),
-      gt_output("powiatTable")
+      div(class = "map-container",shinycssloaders::withSpinner(uiOutput("inc"), color = "#004b23",  id = "spinner",
+      type = 5)),
+      gt_output("powiatTable"),
+      
     )
   )
 )
@@ -61,6 +64,17 @@ server <- function(input, output, session) {
       mutate(wage = as.numeric(replace_na(.data[[selected_wage()]], 0))) # Ensure numeric column
   })
   
+  output$hist <- renderGirafe({
+    hist_plot <- d_powiat_filtered() %>%
+      ggplot() +
+      geom_histogram_interactive(aes(x = wage,tooltip =  paste0("[",round(..xmin..,2)," zł : ",round(..xmax..,2),"zł] ilość gmin: ",..count..), group = 1L), bins = 50, fill = "#70e000", color = "green4") +
+      labs(x = "pensja", y = "ilość gmin", title = glue::glue("rozkład pensji w roku {input$rok}")) +
+      theme_minimal()
+    girafe(ggobj = hist_plot, bg = "transparent",
+           options = list(opts_hover(css = "fill:#283618; stroke:black;"), opts_hover_inv(css = "opacity:0.4;")))
+  })
+  
+  
   output$summary <- renderText({
     data <- d_powiat_filtered()
     
@@ -68,15 +82,16 @@ server <- function(input, output, session) {
     min_powiat <- data %>% filter(!is.na(wage)) %>% slice_min(wage, n = 1)
     
     glue::glue(
-      "Powiat z najwyższą pensją: {max_powiat$region} z pensją {max_powiat$wage} zł <br />
-             Powiat z najmniejszą pensją: {min_powiat$region} z pensją {min_powiat$wage} zł"
+      "Powiat z najwyższą pensją: {max_powiat$region} z pensją {max_powiat$wage} zł\n
+             Powiat z najmniejszą pensją: {min_powiat$region} z pensją {min_powiat$wage} zł\n"
     )
   })
   
   output$inc <- renderUI({
-    tags$iframe(
+      tags$iframe(
       src = paste0("./maps/", selected_wage(), ".html"),
-      width = "90%", height = "500px", style = "border:none;"
+      width = "100%", height = "100%",frameborder = "0",
+      scrolling = "no", style = "border:none; overflow:hidden;"
     )
   })
   
