@@ -45,7 +45,8 @@ ui <- fluidPage(
       girafeOutput("hist", width = "100%", height = "400px")
     ),
     mainPanel(
-      shinycssloaders::withSpinner(uiOutput("inc"), color = "#004b23"),
+      div(class = "map-container",shinycssloaders::withSpinner(uiOutput("inc"), custom.css = TRUE, id = "spinner",
+      type = 5)),
       gt_output("powiatTable"),
       
     )
@@ -90,7 +91,7 @@ server <- function(input, output, session) {
       tags$iframe(
       src = paste0("./maps/", selected_wage(), ".html"),
       width = "100%", height = "100%",frameborder = "0",
-      scrolling = "no", style = "border:none; overflow:hidden"
+      scrolling = "no", style = "border:none; overflow:hidden;"
     )
   })
   
