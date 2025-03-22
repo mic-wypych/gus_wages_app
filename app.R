@@ -45,7 +45,7 @@ ui <- fluidPage(
       girafeOutput("hist", width = "100%", height = "400px")
     ),
     mainPanel(
-      div(class = "map-container",shinycssloaders::withSpinner(uiOutput("inc"), custom.css = TRUE, id = "spinner",
+      div(class = "map-container",shinycssloaders::withSpinner(uiOutput("inc"), color = "#004b23",  id = "spinner",
       type = 5)),
       gt_output("powiatTable"),
       

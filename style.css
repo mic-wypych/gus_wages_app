@@ -53,13 +53,27 @@ h1 {
   color: #004b23;
 }
 
+#spinner .load-container{
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80px !important;
+  height: 80px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
 /* Limit the bars specifically */
 #spinner .loader-bars div {
   width: 8px !important;
   height: 40px !important;
 }
 
+
 /* Optional: avoid stretching */
-#mspinner .loader {
+#spinner .loader {
   max-width: 100px; /* Cap overall spinner size */
 }
