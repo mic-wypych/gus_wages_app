@@ -8,6 +8,7 @@ library(gt)
 library(gtExtras)
 library(tidyr)
 library(htmltools)
+library(shinydashboard)
 
 # Load spatial data
 powiaty <- read_sf("data/powiaty.shp") %>%
@@ -45,9 +46,25 @@ ui <- fluidPage(
       girafeOutput("hist", width = "100%", height = "400px")
     ),
     mainPanel(
-      div(class = "map-container",shinycssloaders::withSpinner(uiOutput("inc"), color = "#004b23",  id = "spinner",
-      type = 5)),
-      gt_output("powiatTable"),
+      fluidRow(
+        column(12,
+          h4("Main header text"),
+          p("This is a description text that spans across the top of the main panel. 
+            You can include any introductory information here.")
+        )
+      ),
+      fluidRow(
+        column(8,
+          div(class = "map-container",shinycssloaders::withSpinner(uiOutput("inc"), color = "#004b23",  id = "spinner",
+          type = 5)),
+          gt_output("powiatTable")
+        ),
+        column(4,
+          h4("Additional header"),
+          p("More more description")
+      )
+      )
+        
       
     )
   )
