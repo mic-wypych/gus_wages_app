@@ -37,7 +37,7 @@ ui <- fluidPage(
     gradient = "radial",
     direction = c("bottom", "left")
   ),
-  titlePanel("Średnie pensje na poziomie Powiatu"),
+  titlePanel("Średnie pensje na poziomie Powiatu w latach 2002 - 2023"),
   
   sidebarLayout(
     sidebarPanel(

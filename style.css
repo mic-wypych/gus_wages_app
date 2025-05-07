@@ -8,7 +8,9 @@ h1 {
   font-weight: "bold";
 }
 
-
+p {
+  font-size: 1.5em;
+}
 
 .map-container {
   width: 75%;
