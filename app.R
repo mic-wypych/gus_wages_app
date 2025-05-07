@@ -51,8 +51,7 @@ ui <- fluidPage(
         tabPanel("Map",
         fluidRow(
             h4("Mapa"),
-            p("This is a description text that spans across the top of the main panel. 
-              You can include any introductory information here.")
+            p("Poniższa mapa pozwala sprawdzić średnie pensje w każdym powiecie w wybranym roku. Najedź na powiat by zobaczyć jego średnią pensję")
           
         ),
         fluidRow(
@@ -63,13 +62,25 @@ ui <- fluidPage(
         ), 
 
         tabPanel("Table",
-        gt_output("powiatTable")
+        fluidRow(
+          h4("Tabela"),
+          p("Poniższa tabela coś pokazuje, ale co to kto w sumie wie")
         
+      ),
+      fluidRow(
+        gt_output("powiatTable")
+      )
         ),
 
         tabPanel("Time",
-        plotlyOutput("timeplot")
+        fluidRow(
+          h4("Zmiany w czasie"),
+          p("Poniższa wykres pokazuje zmiany w czasie średnich wypłat we wszystkich powiatach. Najedź na wykres by zobaczyć poszczególne powiaty, wypłaty i trajektorie zmian.")
         
+      ),
+      fluidRow(
+        plotlyOutput("timeplot")
+      )
         )
       ))
       
