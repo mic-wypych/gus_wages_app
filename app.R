@@ -58,12 +58,20 @@ ui <- fluidPage(
         column(8,
           div(class = "map-container",shinycssloaders::withSpinner(uiOutput("inc"), color = "#004b23",  id = "spinner",
           type = 5)),
-          gt_output("powiatTable")
+          
         ),
         column(4,
           h4("Additional header"),
           p("More more description")
       )
+      ),
+      fluidRow(
+        column(6,
+          gt_output("powiatTable")
+        ),
+        column(6,
+          plotlyOutput("timeplot")
+        )
       )
         
       
@@ -111,6 +119,33 @@ server <- function(input, output, session) {
       width = "100%", height = "100%",frameborder = "0",
       scrolling = "no", style = "border:none; overflow:hidden;"
     )
+  })
+
+  output$timeplot <- renderPlotly({
+
+    time_plot <- d_powiat |>
+      pivot_longer(cols = wage_2002:wage_2023, names_to = "year", values_to = "wage") |>
+      select(region, year, wage) |>
+      mutate(year = as.numeric(str_remove_all(year, "wage_"))) |>
+      highlight_key(~region) |>
+      ggplot(aes(x = year, y = wage, group = region)) +
+      geom_line(alpha = .1) +
+      scale_x_continuous(breaks = 2002:2023) +
+      theme_minimal() +
+      theme(panel.grid.minor = element_blank(),
+            plot.background = element_blank(),
+            panel.background = element_blank(),
+          text = element_text(family = "Jost"))
+
+      ggplotly(time_plot) |>
+        highlight(on = "plotly_hover", color = toRGB("springgreen3")) |>
+          layout(
+            paper_bgcolor = 'rgba(0,0,0,0)',  # Transparent paper background
+            plot_bgcolor = 'rgba(0,0,0,0)',   # Transparent plot background
+            xaxis = list(showgrid = FALSE),   # Remove x-axis grid
+            yaxis = list(showgrid = FALSE)    # Remove y-axis grid
+          )
+        
   })
   
   # output$mapPlot <- renderGirafe({
