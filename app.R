@@ -47,35 +47,44 @@ ui <- fluidPage(
       girafeOutput("hist", width = "100%", height = "400px")
     ),
     mainPanel(
-      fluidRow(
-        column(12,
-          h4("Mapa"),
-          p("This is a description text that spans across the top of the main panel. 
-            You can include any introductory information here.")
-        )
-      ),
-      fluidRow(
-        column(8,
-          div(class = "map-container",shinycssloaders::withSpinner(uiOutput("inc"), color = "#004b23",  id = "spinner",
-          type = 5)),
+      tabsetPanel(
+        tabPanel("Map",
+        fluidRow(
+            h4("Mapa"),
+            p("Poniższa mapa pozwala sprawdzić średnie pensje w każdym powiecie w wybranym roku. Najedź na powiat by zobaczyć jego średnią pensję")
           
         ),
-        column(4,
-          h4("Additional header"),
-          p("More more description")
-      )
+        fluidRow(
+            div(class = "map-container",shinycssloaders::withSpinner(uiOutput("inc"), color = "#004b23",  id = "spinner",
+            type = 5))
+        )
+        
+        ), 
+
+        tabPanel("Table",
+        fluidRow(
+          h4("Tabela"),
+          p("Poniższa tabela coś pokazuje, ale co to kto w sumie wie")
+        
       ),
       fluidRow(
-        column(6,
-          gt_output("powiatTable")
-        ),
-        column(6,
-          plotlyOutput("timeplot")
-        )
+        gt_output("powiatTable")
       )
+        ),
+
+        tabPanel("Time",
+        fluidRow(
+          h4("Zmiany w czasie"),
+          p("Poniższa wykres pokazuje zmiany w czasie średnich wypłat we wszystkich powiatach. Najedź na wykres by zobaczyć poszczególne powiaty, wypłaty i trajektorie zmian.")
         
+      ),
+      fluidRow(
+        plotlyOutput("timeplot")
+      )
+        )
+      ))
       
-    )
+    
   )
 )
 
