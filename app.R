@@ -58,7 +58,8 @@ ui <- fluidPage(
         column(8,
           div(class = "map-container",shinycssloaders::withSpinner(uiOutput("inc"), color = "#004b23",  id = "spinner",
           type = 5)),
-          gt_output("powiatTable")
+          gt_output("powiatTable"),
+          plotlyOutput("timeplot")
         ),
         column(4,
           h4("Additional header"),
@@ -111,6 +112,23 @@ server <- function(input, output, session) {
       width = "100%", height = "100%",frameborder = "0",
       scrolling = "no", style = "border:none; overflow:hidden;"
     )
+  })
+
+  output$timeplot <- renderPlotly({
+    
+    time_plot <- d_powiat |>
+      pivot_longer(cols = wage_2002:wage_2023, names_to = "year", values_to = "wage") |>
+      select(region, year, wage) |>
+      mutate(year = as.numeric(str_remove_all(year, "wage_"))) |>
+      highlight_key(~region) |>
+      ggplot(aes(x = year, y = wage, group = region)) +
+      geom_line(alpha = .1) +
+      scale_x_continuous(breaks = 2002:2023) +
+      theme_minimal() +
+      theme(panel.grid.minor = element_blank())
+
+      ggplotly(time_plot) |>
+        highlight(on = "plotly_hover", color = toRGB("springgreen3"))
   })
   
   # output$mapPlot <- renderGirafe({
