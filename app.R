@@ -9,6 +9,7 @@ library(gtExtras)
 library(tidyr)
 library(htmltools)
 library(shinydashboard)
+library(plotly)
 
 # Load spatial data
 powiaty <- read_sf("data/powiaty.shp") %>%
@@ -48,7 +49,7 @@ ui <- fluidPage(
     mainPanel(
       fluidRow(
         column(12,
-          h4("Main header text"),
+          h4("Mapa"),
           p("This is a description text that spans across the top of the main panel. 
             You can include any introductory information here.")
         )
