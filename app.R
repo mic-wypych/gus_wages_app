@@ -47,35 +47,41 @@ ui <- fluidPage(
       girafeOutput("hist", width = "100%", height = "400px")
     ),
     mainPanel(
-      fluidRow(
-        column(12,
-          h4("Mapa"),
-          p("This is a description text that spans across the top of the main panel. 
-            You can include any introductory information here.")
-        )
-      ),
-      fluidRow(
-        column(8,
-          div(class = "map-container",shinycssloaders::withSpinner(uiOutput("inc"), color = "#004b23",  id = "spinner",
-          type = 5)),
-          
+      tabsetPanel(
+        tabPanel("Map",
+        fluidRow(
+          column(12,
+            h4("Mapa"),
+            p("This is a description text that spans across the top of the main panel. 
+              You can include any introductory information here.")
+          )
         ),
-        column(4,
-          h4("Additional header"),
-          p("More more description")
-      )
-      ),
-      fluidRow(
-        column(6,
-          gt_output("powiatTable")
-        ),
-        column(6,
-          plotlyOutput("timeplot")
+        fluidRow(
+          column(8,
+            div(class = "map-container",shinycssloaders::withSpinner(uiOutput("inc"), color = "#004b23",  id = "spinner",
+            type = 5)),
+            
+          ),
+          column(4,
+            h4("Additional header"),
+            p("More more description")
         )
-      )
+        )
         
+        ), 
+
+        tabPanel("Table",
+        gt_output("powiatTable")
+        
+        ),
+
+        tabPanel("Time",
+        plotlyOutput("timeplot")
+        
+        )
+      ))
       
-    )
+    
   )
 )
 
