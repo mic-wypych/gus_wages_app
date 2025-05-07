@@ -50,22 +50,14 @@ ui <- fluidPage(
       tabsetPanel(
         tabPanel("Map",
         fluidRow(
-          column(12,
             h4("Mapa"),
             p("This is a description text that spans across the top of the main panel. 
               You can include any introductory information here.")
-          )
+          
         ),
         fluidRow(
-          column(8,
             div(class = "map-container",shinycssloaders::withSpinner(uiOutput("inc"), color = "#004b23",  id = "spinner",
-            type = 5)),
-            
-          ),
-          column(4,
-            h4("Additional header"),
-            p("More more description")
-        )
+            type = 5))
         )
         
         ), 
