@@ -75,8 +75,8 @@ ui <- fluidPage(
         tabPanel("Time",
         fluidRow(
           h4("Zmiany w czasie"),
-          p("Poniższa wykres pokazuje zmiany w czasie średnich wypłat we wszystkich powiatach. Najedź na wykres by zobaczyć poszczególne powiaty, wypłaty i trajektorie zmian.")
-        
+          p("Poniższa wykres pokazuje zmiany w czasie średnich wypłat we wszystkich powiatach. Najedź na wykres by zobaczyć poszczególne powiaty, wypłaty i trajektorie zmian. Możesz również wybrać powiaty, które mają być przedstawione na wykresie."),
+          selectInput("region", "Powiat:", choices = unique(d_powiat$region), multiple = TRUE)
       ),
       fluidRow(
         plotlyOutput("timeplot")
@@ -97,6 +97,16 @@ server <- function(input, output, session) {
   d_powiat_filtered <- reactive({
     d_powiat %>%
       mutate(wage = as.numeric(replace_na(.data[[selected_wage()]], 0))) # Ensure numeric column
+  })
+
+  selected_region <- reactive({
+    if(!is.null(input$region)) {
+      d_powiat %>%
+      filter(region %in% input$region)
+    } else {
+      d_powiat
+    }
+    
   })
   
   output$hist <- renderGirafe({
@@ -132,7 +142,7 @@ server <- function(input, output, session) {
 
   output$timeplot <- renderPlotly({
 
-    time_plot <- d_powiat |>
+    time_plot <- selected_region() |>
       pivot_longer(cols = wage_2002:wage_2023, names_to = "year", values_to = "wage") |>
       select(region, year, wage) |>
       mutate(year = as.numeric(str_remove_all(year, "wage_"))) |>
@@ -147,7 +157,7 @@ server <- function(input, output, session) {
           text = element_text(family = "Jost"))
 
       ggplotly(time_plot) |>
-        highlight(on = "plotly_hover", color = toRGB("springgreen3")) |>
+        highlight(on = "plotly_hover", color = toRGB("darkgreen")) |>
           layout(
             paper_bgcolor = 'rgba(0,0,0,0)',  # Transparent paper background
             plot_bgcolor = 'rgba(0,0,0,0)',   # Transparent plot background
