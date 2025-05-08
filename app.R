@@ -190,7 +190,7 @@ server <- function(input, output, session) {
   
   output$powiatTable <- renderReactable({
 
-    bar_chart <- function(label, width = "100%", height = "1rem", fill = "#52b69a", background = NULL) {
+    bar_chart <- function(label, width = "100%", height = "1rem", fill = "#17C448", background = NULL) {
       bar <- div(style = list(background = fill, width = width, height = height))
       chart <- div(style = list(flexGrow = 1, marginLeft = "0.5rem", background = background), bar)
       div(style = list(display = "flex", alignItems = "center"), label, chart)
@@ -242,7 +242,7 @@ server <- function(input, output, session) {
       columns = list(
         percentile = colDef(name = "Centyl", align = "left", cell = function(value) {
           width <- paste0(value / max(d_totable$percentile) * 100, "%")
-          bar_chart(paste0(value, "%"), width = width, background = "#AAAAAA")
+          bar_chart(paste0(value, "%"), width = width, background = "#FFFFFF")
         }),
         diff_prev = colDef(
           name = "Zmiana w stosunku do roku poprzedniego",
@@ -263,7 +263,8 @@ server <- function(input, output, session) {
         )
       ),
       style = list(fontFamily = "Jost, sans-serif", fontSize = "1.25rem", align = "center"),
-      theme = reactableTheme(backgroundColor = "transparent")
+      theme = reactableTheme(backgroundColor = "transparent",
+                             headerStyle = list(fontFamily = "Jost, sans-serif", fontSize = "1.5rem", align = "center"))
     )
 
 
