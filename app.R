@@ -4,8 +4,7 @@ library(ggplot2)
 library(ggiraph)
 library(dplyr)
 library(stringr)
-library(gt)
-library(gtExtras)
+library(reactable)
 library(tidyr)
 library(htmltools)
 library(shinydashboard)
@@ -27,7 +26,8 @@ d_powiat <- d %>%
   mutate(region = tolower(str_remove_all(region, "powiat| m\\. st\\.| m\\.")) %>%
            trimws()) %>%
   mutate(region = recode(region, "wałbrzych od 2013" = "wałbrzych",
-                         "wałbrzych do 2002" = "wałbrzych"))
+                         "wałbrzych do 2002" = "wałbrzych"),
+          wage_2001 = wage_2002)
 
 # UI
 ui <- fluidPage(
@@ -68,7 +68,7 @@ ui <- fluidPage(
         
       ),
       fluidRow(
-        gt_output("powiatTable")
+        reactableOutput("powiatTable")
       )
         ),
 
@@ -94,9 +94,15 @@ server <- function(input, output, session) {
     paste0("wage_", input$rok)
   })
   
+  previous_wage <- reactive({
+    prevyear <- as.numeric(input$rok)-1
+    paste0("wage_", prevyear)
+  })
+
   d_powiat_filtered <- reactive({
     d_powiat %>%
-      mutate(wage = as.numeric(replace_na(.data[[selected_wage()]], 0))) # Ensure numeric column
+      mutate(wage = as.numeric(replace_na(.data[[selected_wage()]], 0)),
+             previous_wage = as.numeric(replace_na(.data[[previous_wage()]], 0))) # Ensure numeric column
   })
 
   selected_region <- reactive({
@@ -182,21 +188,86 @@ server <- function(input, output, session) {
   #          options = list(opts_hover(css = "fill:#283618;stroke:black;"), opts_hover_inv(css = "opacity:0.4;")))
   # })
   
-  output$powiatTable <- render_gt({
-    d_powiat_filtered() %>%
-      select(region, wage) %>%
-      group_by(region) %>%
-      summarise(
-        `minimalna pensja` = paste(min(wage, na.rm = TRUE), "zł"),
-        `średnia pensja` = paste(round(mean(wage, na.rm = TRUE), 2), "zł"),
-        `najwyższa pensja` = paste(max(wage, na.rm = TRUE), "zł"),
-        .groups = "drop"
-      ) %>%
-      arrange(region) %>%
-      gt() %>%
-      tab_options(table.background.color = "#FFFFFF00") %>%
-      opt_table_font(font = google_font("Space Grotesk"), color = "black", weight = "bold") %>%
-      opt_interactive(use_sorting = FALSE, use_filters = TRUE, use_compact_mode = TRUE)
+  output$powiatTable <- renderReactable({
+
+    bar_chart <- function(label, width = "100%", height = "1rem", fill = "#52b69a", background = NULL) {
+      bar <- div(style = list(background = fill, width = width, height = height))
+      chart <- div(style = list(flexGrow = 1, marginLeft = "0.5rem", background = background), bar)
+      div(style = list(display = "flex", alignItems = "center"), label, chart)
+    }
+
+    bar_chart_pos_neg <- function(label, value, max_value = 1, height = "1rem",
+                                  pos_fill = "#4361ee", neg_fill = "#780116") {
+      neg_chart <- div(style = list(flex = "1 1 0"))
+      pos_chart <- div(style = list(flex = "1 1 0"))
+      width <- paste0(abs(value / max_value) * 100, "%")
+
+      if (value < 0) {
+        bar <- div(style = list(marginLeft = "0.5rem", background = neg_fill, width = width, height = height))
+        chart <- div(
+          style = list(display = "flex", alignItems = "center", justifyContent = "flex-end"),
+          label,
+          bar
+        )
+        neg_chart <- tagAppendChild(neg_chart, chart)
+      } else {
+        bar <- div(style = list(marginRight = "0.5rem", background = pos_fill, width = width, height = height))
+        chart <- div(style = list(display = "flex", alignItems = "center"), bar, label)
+        pos_chart <- tagAppendChild(pos_chart, chart)
+      }
+
+      div(style = list(display = "flex"), neg_chart, pos_chart)
+    }
+
+    d_totable <- d_powiat_filtered() %>%
+      select(region, wage, previous_wage) %>%
+      mutate(diff_median = wage - median(wage, na.rm = T),
+            percentile = ntile(wage, 100),
+            diff_prev = wage - previous_wage,
+            percentile = replace_na(percentile, 0),
+            diff_prev = replace_na(diff_prev, 0)) %>%
+      mutate(across(is.numeric, \(x) round(x, 2))) %>%
+      rename("średnia płaca" = "wage", "powiat" = "region") %>%
+      select(-previous_wage)
+
+    
+    
+    
+    
+    reactable(d_totable,
+      defaultColDef = colDef(
+        align = "center",  # Center-aligns all columns by default
+        headerStyle = list(textAlign = "center")  # Center-aligns headers
+      ),
+      columns = list(
+        percentile = colDef(name = "Centyl", align = "left", cell = function(value) {
+          width <- paste0(value / max(d_totable$percentile) * 100, "%")
+          bar_chart(paste0(value, "%"), width = width, background = "#AAAAAA")
+        }),
+        diff_prev = colDef(
+          name = "Zmiana w stosunku do roku poprzedniego",
+          defaultSortOrder = "desc",
+          cell = function(value) {
+            label <- paste(value, "zł")
+            bar_chart_pos_neg(label, value)
+          },
+          align = "center",
+          minWidth = 100
+        ),
+        diff_median = colDef(
+          name = "różnica od mediany",
+          cell = function(value) {
+            color <- if (value >= 0) "#0066CC" else "#CC0000"  # Blue if positive, red if negative
+            div_style <- sprintf("color: %s; font-weight: 900;", color)
+            div(style = div_style, value)}
+        )
+      ),
+      style = list(fontFamily = "Jost, sans-serif", fontSize = "1.25rem", align = "center"),
+      theme = reactableTheme(backgroundColor = "transparent")
+    )
+
+
+
   })
 }
 
