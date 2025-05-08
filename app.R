@@ -131,8 +131,7 @@ server <- function(input, output, session) {
             axis.ticks.x = element_line(color = "black"),
             panel.grid.minor = element_blank(),
             panel.grid.major= element_blank(),
-            plot.title.position = "plot",
-            clip = "off")
+            plot.title.position = "plot")
     girafe(ggobj = hist_plot, bg = "transparent",
            options = list(opts_hover(css = "fill:#283618; stroke:black;"), opts_hover_inv(css = "opacity:0.4;")))
   })
@@ -141,8 +140,8 @@ server <- function(input, output, session) {
   output$summary <- renderText({
     data <- d_powiat_filtered()
     
-    max_powiat <- data %>% filter(!is.na(wage)) %>% slice_max(wage, n = 1)
-    min_powiat <- data %>% filter(!is.na(wage)) %>% slice_min(wage, n = 1)
+    max_powiat <- data %>% filter(!is.na(wage)) %>% slice_max(wage, n = 1) %>% distinct_all()
+    min_powiat <- data %>% filter(!is.na(wage)) %>% slice_min(wage, n = 1) %>% distinct_all()
     
     glue::glue(
       "Powiat z najwyższą pensją: {max_powiat$region} z pensją {max_powiat$wage} zł{tags$br()}
