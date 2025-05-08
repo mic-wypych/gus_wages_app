@@ -130,7 +130,9 @@ server <- function(input, output, session) {
             axis.text =  element_text(family = "Jost", size = 15),
             axis.ticks.x = element_line(color = "black"),
             panel.grid.minor = element_blank(),
-            panel.grid.major= element_blank())
+            panel.grid.major= element_blank(),
+            plot.title.position = "plot",
+            clip = "off")
     girafe(ggobj = hist_plot, bg = "transparent",
            options = list(opts_hover(css = "fill:#283618; stroke:black;"), opts_hover_inv(css = "opacity:0.4;")))
   })
