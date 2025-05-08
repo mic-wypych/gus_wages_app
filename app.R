@@ -43,7 +43,7 @@ ui <- fluidPage(
   sidebarLayout(
     sidebarPanel(
       selectInput("rok", "Wybierz rok:", choices = 2002:2023, selected = 2023),
-      textOutput("summary"),
+      htmlOutput("summary"),
       girafeOutput("hist", width = "100%", height = "400px")
     ),
     mainPanel(
@@ -143,8 +143,8 @@ server <- function(input, output, session) {
     min_powiat <- data %>% filter(!is.na(wage)) %>% slice_min(wage, n = 1)
     
     glue::glue(
-      "Powiat z najwyższą pensją: {max_powiat$region} z pensją {max_powiat$wage} zł
-             Powiat z najmniejszą pensją: {min_powiat$region} z pensją {min_powiat$wage} zł"
+      "Powiat z najwyższą pensją: {max_powiat$region} z pensją {max_powiat$wage} zł{tags$br()}
+             Powiat z najmniejszą pensją: {min_powiat$region} z pensją {min_powiat$wage} zł{tags$br()}"
     )
   })
   
