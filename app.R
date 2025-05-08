@@ -43,7 +43,6 @@ ui <- fluidPage(
   sidebarLayout(
     sidebarPanel(
       selectInput("rok", "Wybierz rok:", choices = 2002:2023, selected = 2023),
-      htmlOutput("summary"),
       girafeOutput("hist", width = "100%", height = "400px")
     ),
     mainPanel(
@@ -134,19 +133,6 @@ server <- function(input, output, session) {
             plot.title.position = "plot")
     girafe(ggobj = hist_plot, bg = "transparent",
            options = list(opts_hover(css = "fill:#283618; stroke:black;"), opts_hover_inv(css = "opacity:0.4;")))
-  })
-  
-  
-  output$summary <- renderText({
-    data <- d_powiat_filtered()
-    
-    max_powiat <- data %>% filter(!is.na(wage)) %>% slice_max(wage, n = 1) %>% distinct_all()
-    min_powiat <- data %>% filter(!is.na(wage)) %>% slice_min(wage, n = 1) %>% distinct_all()
-    
-    glue::glue(
-      "Powiat z najwyższą pensją: {max_powiat$region} z pensją {max_powiat$wage} zł{tags$br()}
-             Powiat z najmniejszą pensją: {min_powiat$region} z pensją {min_powiat$wage} zł{tags$br()}"
-    )
   })
   
   output$inc <- renderUI({
