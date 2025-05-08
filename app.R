@@ -191,19 +191,19 @@ server <- function(input, output, session) {
   output$powiatTable <- renderReactable({
 
     bar_chart <- function(label, width = "100%", height = "1rem", fill = "#17C448", background = NULL) {
-      bar <- div(style = list(background = fill, width = width, height = height))
+      bar <- div(style = list(background = fill, width = width, height = height, transition = "width 0.8s cubic-bezier(0.42, 0, 0.58, 1)"))
       chart <- div(style = list(flexGrow = 1, marginLeft = "0.5rem", background = background), bar)
       div(style = list(display = "flex", alignItems = "center"), label, chart)
     }
 
-    bar_chart_pos_neg <- function(label, value, max_value = 1, height = "1rem",
+    bar_chart_pos_neg <- function(label, value, max_value = 2000, height = "1rem",
                                   pos_fill = "#4361ee", neg_fill = "#780116") {
       neg_chart <- div(style = list(flex = "1 1 0"))
       pos_chart <- div(style = list(flex = "1 1 0"))
-      width <- paste0(abs(value / max_value) * 100, "%")
+      width <- (value/max_value)*100
 
       if (value < 0) {
-        bar <- div(style = list(marginLeft = "0.5rem", background = neg_fill, width = width, height = height))
+        bar <- div(style = list(marginLeft = "0.5rem", background = neg_fill, width = width, height = height, transition = "width 0.8s cubic-bezier(0.42, 0, 0.58, 1)"))
         chart <- div(
           style = list(display = "flex", alignItems = "center", justifyContent = "flex-end"),
           label,
@@ -211,7 +211,7 @@ server <- function(input, output, session) {
         )
         neg_chart <- tagAppendChild(neg_chart, chart)
       } else {
-        bar <- div(style = list(marginRight = "0.5rem", background = pos_fill, width = width, height = height))
+        bar <- div(style = list(marginRight = "0.5rem", background = pos_fill, width = width, height = height, transition = "width 0.8s cubic-bezier(0.42, 0, 0.58, 1)"))
         chart <- div(style = list(display = "flex", alignItems = "center"), bar, label)
         pos_chart <- tagAppendChild(pos_chart, chart)
       }
@@ -249,7 +249,7 @@ server <- function(input, output, session) {
           defaultSortOrder = "desc",
           cell = function(value) {
             label <- paste(value, "zł")
-            bar_chart_pos_neg(label, value)
+            bar_chart_pos_neg(label, value, max_value = max(abs(d_totable$diff_prev), na.rm = T))
           },
           align = "center",
           minWidth = 100
@@ -264,7 +264,7 @@ server <- function(input, output, session) {
       ),
       style = list(fontFamily = "Jost, sans-serif", fontSize = "1.25rem", align = "center"),
       theme = reactableTheme(backgroundColor = "transparent",
-                             headerStyle = list(fontFamily = "Jost, sans-serif", fontSize = "1.5rem", align = "center"))
+                             headerStyle = list(fontFamily = "Jost, sans-serif", fontSize = "1.5rem", textAlign = "center"))
     )
 
 
