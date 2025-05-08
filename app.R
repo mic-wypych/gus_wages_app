@@ -260,7 +260,13 @@ server <- function(input, output, session) {
         headerVAlign = "bottom" 
       ),
       columns = list(
-        powiat = colDef(name = "powiat", searchable = TRUE),
+        powiat = colDef(name = "powiat",filterable = TRUE,
+        # Filter by case-sensitive text match
+        filterMethod = JS("function(rows, columnId, filterValue) {
+          return rows.filter(function(row) {
+            return row.values[columnId].indexOf(filterValue) !== -1
+          })
+        }")),
         percentile = colDef(name = "Centyl", align = "left", cell = function(value) {
           width <- paste0(value / max(d_totable$percentile) * 100, "%")
           bar_chart(paste0(value, "%"), width = width, background = "#FFFFFF")
@@ -274,7 +280,7 @@ server <- function(input, output, session) {
           },
           align = "center",
           style = list(fontSize = ".7em"),
-          minWidth = 100
+          minWidth = 300
         ),
         diff_median = colDef(
           name = "różnica od mediany",
@@ -284,7 +290,6 @@ server <- function(input, output, session) {
             div(style = div_style, value)}
         )
       ),
-      searchable = TRUE,
       style = list(fontFamily = "Jost, sans-serif", fontSize = "1.7rem", align = "center"),
       theme = reactableTheme(backgroundColor = "transparent",
                              borderColor = "black",
