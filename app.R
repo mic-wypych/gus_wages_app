@@ -4,8 +4,7 @@ library(ggplot2)
 library(ggiraph)
 library(dplyr)
 library(stringr)
-library(gt)
-library(gtExtras)
+library(reactable)
 library(tidyr)
 library(htmltools)
 library(shinydashboard)
@@ -27,7 +26,8 @@ d_powiat <- d %>%
   mutate(region = tolower(str_remove_all(region, "powiat| m\\. st\\.| m\\.")) %>%
            trimws()) %>%
   mutate(region = recode(region, "wałbrzych od 2013" = "wałbrzych",
-                         "wałbrzych do 2002" = "wałbrzych"))
+                         "wałbrzych do 2002" = "wałbrzych"),
+          wage_2001 = wage_2002)
 
 # UI
 ui <- fluidPage(
@@ -38,7 +38,7 @@ ui <- fluidPage(
     direction = c("bottom", "left")
   ),
   titlePanel("Średnie pensje na poziomie Powiatu w latach 2002 - 2023"),
-  
+  h4("Ta aplikacja pozwala sprawdzić średnie pensje na poziomie powiatu od 2002 do 2023 roku. Po prawej stronie można wybrać rok dla którego chce się sprawdzić pensje. Poniżej wyświetlą się powiaty z najwyższą i najniższą średnią pensją oraz rozkład średnich pensji w danym roku. W zakładkach można zobaczyć mapę wszystkich powiatów i ich średnie pensje, tabelę porównującą średnie pensje w danym roku oraz zmiany średnich pensji w czasie."),
   sidebarLayout(
     sidebarPanel(
       "Ta aplikacja pozwala sprawdzić średnie pensje na poziomie powiatów od 2002 do 2023 roku.",
@@ -48,9 +48,9 @@ ui <- fluidPage(
     ),
     mainPanel(
       tabsetPanel(
-        tabPanel("Map",
+        tabPanel("Mapa powiatów",
         fluidRow(
-            h4("Mapa"),
+            h4("Mapa pensji w powiatach w wybranym roku"),
             p("Poniższa mapa pozwala sprawdzić średnie pensje w każdym powiecie w wybranym roku. Najedź na powiat by zobaczyć jego średnią pensję")
           
         ),
@@ -61,18 +61,18 @@ ui <- fluidPage(
         
         ), 
 
-        tabPanel("Table",
+        tabPanel("Pensje na tle innych powiatów",
         fluidRow(
           h4("Tabela"),
-          p("Poniższa tabela coś pokazuje, ale co to kto w sumie wie")
+          p("Poniższa tabela pokazuje płace w danym roku na tle innych powiatów i poprzedniego roku. Centyl oznacza jaki procent powiatów w danym roku ma taką samą lub niższą pensję. Na przykład powiat znajdujący się w 50 centylu ma średnią pensją większą lub równą od 50% powiatów w danym roku.")
         
       ),
       fluidRow(
-        gt_output("powiatTable")
+        reactableOutput("powiatTable")
       )
         ),
 
-        tabPanel("Time",
+        tabPanel("Zmiany pensji w czasie",
         fluidRow(
           h4("Zmiany w czasie"),
           p("Poniższa wykres pokazuje zmiany w czasie średnich wypłat we wszystkich powiatach. Najedź na wykres by zobaczyć poszczególne powiaty, wypłaty i trajektorie zmian. Możesz również wybrać powiaty, które mają być przedstawione na wykresie."),
@@ -94,9 +94,15 @@ server <- function(input, output, session) {
     paste0("wage_", input$rok)
   })
   
+  previous_wage <- reactive({
+    prevyear <- as.numeric(input$rok)-1
+    paste0("wage_", prevyear)
+  })
+
   d_powiat_filtered <- reactive({
     d_powiat %>%
-      mutate(wage = as.numeric(replace_na(.data[[selected_wage()]], 0))) # Ensure numeric column
+      mutate(wage = as.numeric(replace_na(.data[[selected_wage()]], 0)),
+             previous_wage = as.numeric(replace_na(.data[[previous_wage()]], 0))) # Ensure numeric column
   })
 
   selected_region <- reactive({
@@ -182,21 +188,87 @@ server <- function(input, output, session) {
   #          options = list(opts_hover(css = "fill:#283618;stroke:black;"), opts_hover_inv(css = "opacity:0.4;")))
   # })
   
-  output$powiatTable <- render_gt({
-    d_powiat_filtered() %>%
-      select(region, wage) %>%
-      group_by(region) %>%
-      summarise(
-        `minimalna pensja` = paste(min(wage, na.rm = TRUE), "zł"),
-        `średnia pensja` = paste(round(mean(wage, na.rm = TRUE), 2), "zł"),
-        `najwyższa pensja` = paste(max(wage, na.rm = TRUE), "zł"),
-        .groups = "drop"
-      ) %>%
-      arrange(region) %>%
-      gt() %>%
-      tab_options(table.background.color = "#FFFFFF00") %>%
-      opt_table_font(font = google_font("Space Grotesk"), color = "black", weight = "bold") %>%
-      opt_interactive(use_sorting = FALSE, use_filters = TRUE, use_compact_mode = TRUE)
+  output$powiatTable <- renderReactable({
+
+    bar_chart <- function(label, width = "100%", height = "1rem", fill = "#17C448", background = NULL) {
+      bar <- div(style = list(background = fill, width = width, height = height, transition = "width 0.8s cubic-bezier(0.42, 0, 0.58, 1)"))
+      chart <- div(style = list(flexGrow = 1, marginLeft = "0.5rem", background = background), bar)
+      div(style = list(display = "flex", alignItems = "center"), label, chart)
+    }
+
+    bar_chart_pos_neg <- function(label, value, max_value = 2000, height = "1rem",
+                                  pos_fill = "#4361ee", neg_fill = "#780116") {
+      neg_chart <- div(style = list(flex = "1 1 0"))
+      pos_chart <- div(style = list(flex = "1 1 0"))
+      width <- (value/max_value)*100
+
+      if (value < 0) {
+        bar <- div(style = list(marginLeft = "0.5rem", background = neg_fill, width = width, height = height, transition = "width 0.8s cubic-bezier(0.42, 0, 0.58, 1)"))
+        chart <- div(
+          style = list(display = "flex", alignItems = "center", justifyContent = "flex-end"),
+          label,
+          bar
+        )
+        neg_chart <- tagAppendChild(neg_chart, chart)
+      } else {
+        bar <- div(style = list(marginRight = "0.5rem", background = pos_fill, width = width, height = height, transition = "width 0.8s cubic-bezier(0.42, 0, 0.58, 1)"))
+        chart <- div(style = list(display = "flex", alignItems = "center"), bar, label)
+        pos_chart <- tagAppendChild(pos_chart, chart)
+      }
+
+      div(style = list(display = "flex"), neg_chart, pos_chart)
+    }
+
+    d_totable <- d_powiat_filtered() %>%
+      select(region, wage, previous_wage) %>%
+      mutate(diff_median = wage - median(wage, na.rm = T),
+            percentile = ntile(wage, 100),
+            diff_prev = wage - previous_wage,
+            percentile = replace_na(percentile, 0),
+            diff_prev = replace_na(diff_prev, 0)) %>%
+      mutate(across(is.numeric, \(x) round(x, 2))) %>%
+      rename("średnia płaca" = "wage", "powiat" = "region") %>%
+      select(-previous_wage)
+
+    
+    
+    
+    
+    reactable(d_totable,
+      defaultColDef = colDef(
+        align = "center",  # Center-aligns all columns by default
+        headerStyle = list(textAlign = "center")  # Center-aligns headers
+      ),
+      columns = list(
+        percentile = colDef(name = "Centyl", align = "left", cell = function(value) {
+          width <- paste0(value / max(d_totable$percentile) * 100, "%")
+          bar_chart(paste0(value, "%"), width = width, background = "#FFFFFF")
+        }),
+        diff_prev = colDef(
+          name = "Zmiana w stosunku do roku poprzedniego",
+          defaultSortOrder = "desc",
+          cell = function(value) {
+            label <- paste(value, "zł")
+            bar_chart_pos_neg(label, value, max_value = max(abs(d_totable$diff_prev), na.rm = T))
+          },
+          align = "center",
+          minWidth = 100
+        ),
+        diff_median = colDef(
+          name = "różnica od mediany",
+          cell = function(value) {
+            color <- if (value >= 0) "#0066CC" else "#CC0000"  # Blue if positive, red if negative
+            div_style <- sprintf("color: %s; font-weight: 900;", color)
+            div(style = div_style, value)}
+        )
+      ),
+      style = list(fontFamily = "Jost, sans-serif", fontSize = "1.25rem", align = "center"),
+      theme = reactableTheme(backgroundColor = "transparent",
+                             headerStyle = list(fontFamily = "Jost, sans-serif", fontSize = "1.5rem", textAlign = "center"))
+    )
+
+
+
   })
 }
 
