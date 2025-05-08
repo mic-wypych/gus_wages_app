@@ -41,7 +41,7 @@ a:hover {
 
 
 .map-container {
-  width: 75%;
+  width: 70%;
   height: 600px;
   overflow: visible;
 }
@@ -74,8 +74,8 @@ a:hover {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 80px !important;
-  height: 80px !important;
+  width: 20px !important;
+  height: 20px !important;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -88,8 +88,8 @@ a:hover {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 80px !important;
-  height: 80px !important;
+  width: 8px !important;
+  height: 8px !important;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -99,11 +99,17 @@ a:hover {
 
 #spinner .loader-bars div {
   width: 8px !important;
-  height: 40px !important;
+  height: 8px !important;
 }
 
 
 
 #spinner .loader {
   max-width: 100px; 
+}
+
+#explainer {
+  width: 70%;
+  margin-bottom: 10px;
+  border-bottom: #004b23;
 }

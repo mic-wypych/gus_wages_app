@@ -38,7 +38,7 @@ ui <- fluidPage(
     direction = c("bottom", "left")
   ),
   titlePanel("Średnie pensje na poziomie Powiatu w latach 2002 - 2023"),
-  h4("Ta aplikacja pozwala sprawdzić średnie pensje na poziomie powiatu od 2002 do 2023 roku. Po prawej stronie można wybrać rok dla którego chce się sprawdzić pensje. Poniżej wyświetlą się powiaty z najwyższą i najniższą średnią pensją oraz rozkład średnich pensji w danym roku. W zakładkach można zobaczyć mapę wszystkich powiatów i ich średnie pensje, tabelę porównującą średnie pensje w danym roku oraz zmiany średnich pensji w czasie."),
+  div(id = "explainer", h4("Ta aplikacja pozwala sprawdzić średnie pensje na poziomie powiatu od 2002 do 2023 roku. Po prawej stronie można wybrać rok dla którego chce się sprawdzić pensje. Poniżej wyświetlą się powiaty z najwyższą i najniższą średnią pensją oraz rozkład średnich pensji w danym roku. W zakładkach można zobaczyć mapę wszystkich powiatów i ich średnie pensje, tabelę porównującą średnie pensje w danym roku oraz zmiany średnich pensji w czasie.")),
   p("\n"),
   sidebarLayout(
     sidebarPanel(
@@ -66,7 +66,7 @@ ui <- fluidPage(
         
       ),
       fluidRow(
-       shinycssloaders::withSpinner(reactableOutput("powiatTable"), color = "#004b23",  id = "spinner",
+       shinycssloaders::withSpinner(reactableOutput("powiatTable"), color = "#004b23",
         type = 5)
       )
         ),
@@ -77,7 +77,7 @@ ui <- fluidPage(
           selectInput("region", "Powiat:", choices = unique(d_powiat$region), multiple = TRUE)
       ),
       fluidRow(
-        shinycssloaders::withSpinner(plotlyOutput("timeplot"), color = "#004b23",  id = "spinner",
+        shinycssloaders::withSpinner(plotlyOutput("timeplot"), color = "#004b23",
         type = 5)
       )
         )
@@ -122,12 +122,13 @@ server <- function(input, output, session) {
                                      tooltip =  paste0("[",round(..xmin..,2)," zł : ",round(..xmax..,2),"zł] ilość gmin: ",..count..),
                                      group = 1L),
                                  bins = 50, fill = "#70e000", color = "green4") +
-      scale_x_continuous(breaks = seq(0, max(wage) + 1000, 2000), labels = paste0(seq(0, max(wage) + 1000, 2000), "zł")) +
+      scale_x_continuous(breaks = round(seq(0, max(wage) + 1000, length.out = 5),-1), labels = paste0(round(seq(0, max(wage) + 1000, length.out = 5),-1), "zł")) +
       labs(x = " średnia pensja", y = "ilość gmin", title = glue::glue("rozkład pensji w roku {input$rok}")) +
       theme_minimal() +
       theme(plot.title = element_text(family = "Jost", size = 20),
             axis.title = element_text(family = "Jost", size = 15),
             axis.text =  element_text(family = "Jost", size = 15),
+            axis.ticks.x = element_line(color = "black"),
             panel.grid.minor = element_blank(),
             panel.grid.major= element_blank())
     girafe(ggobj = hist_plot, bg = "transparent",
@@ -252,21 +253,25 @@ server <- function(input, output, session) {
     reactable(d_totable,
       defaultColDef = colDef(
         align = "center",  # Center-aligns all columns by default
-        headerStyle = list(textAlign = "center")  # Center-aligns headers
+        headerStyle = list(textAlign = "center"),
+        vAlign = "center",
+        headerVAlign = "bottom" 
       ),
       columns = list(
+        powiat = colDef(name = "powiat", searchable = TRUE),
         percentile = colDef(name = "Centyl", align = "left", cell = function(value) {
           width <- paste0(value / max(d_totable$percentile) * 100, "%")
           bar_chart(paste0(value, "%"), width = width, background = "#FFFFFF")
         }),
         diff_prev = colDef(
-          name = "Zmiana w stosunku do roku poprzedniego",
+          name = "Zmiana rok do roku",
           defaultSortOrder = "desc",
           cell = function(value) {
-            label <- paste(value, "zł")
+            label <- paste0(value, "zł")
             bar_chart_pos_neg(label, value, max_value = max(abs(d_totable$diff_prev), na.rm = T))
           },
           align = "center",
+          style = list(fontSize = ".7em"),
           minWidth = 100
         ),
         diff_median = colDef(
@@ -277,10 +282,11 @@ server <- function(input, output, session) {
             div(style = div_style, value)}
         )
       ),
+      searchable = TRUE,
       style = list(fontFamily = "Jost, sans-serif", fontSize = "1.7rem", align = "center"),
       theme = reactableTheme(backgroundColor = "transparent",
-                             headerStyle = list(fontFamily = "Jost, sans-serif", fontSize = "2rem", textAlign = "center")),
-      searchable = TRUE
+                             borderColor = "black",
+                             headerStyle = list(fontFamily = "Jost, sans-serif", fontSize = "2rem", textAlign = "center"))
     )
 
 
