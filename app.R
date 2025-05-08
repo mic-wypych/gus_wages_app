@@ -158,11 +158,12 @@ server <- function(input, output, session) {
   output$timeplot <- renderPlotly({
 
     time_plot <- selected_region() |>
-      pivot_longer(cols = wage_2002:wage_2023, names_to = "year", values_to = "wage") |>
-      select(region, year, wage) |>
-      mutate(year = as.numeric(str_remove_all(year, "wage_"))) |>
-      highlight_key(~region) |>
-      ggplot(aes(x = year, y = wage, group = region)) +
+      pivot_longer(cols = wage_2002:wage_2023, names_to = "rok", values_to = "pensja") |>
+      select(region, rok, pensja) |>
+      rename("powiat" = "region") |>
+      mutate(rok = as.numeric(str_remove_all(rok, "wage_"))) |>
+      highlight_key(~powiat) |>
+      ggplot(aes(x = rok, y = pensja, group = powiat)) +
       geom_line(alpha = .1) +
       scale_x_continuous(breaks = 2002:2023) +
       scale_y_continuous(breaks = seq(0, 12000, 1000), labels = paste0(seq(0, 12000, 1000), "zł")) +
@@ -171,7 +172,10 @@ server <- function(input, output, session) {
       theme(panel.grid.minor = element_blank(),
             plot.background = element_blank(),
             panel.background = element_blank(),
-          text = element_text(family = "Jost"))
+          text = element_text(family = "Jost"),
+          plot.title = element_text(family = "Jost", size = 20),
+          axis.title = element_text(family = "Jost", size = 12),
+          axis.text =  element_text(family = "Jost", size = 10))
 
       ggplotly(time_plot) |>
         highlight(on = "plotly_hover", color = toRGB("darkgreen")) |>
@@ -273,9 +277,9 @@ server <- function(input, output, session) {
             div(style = div_style, value)}
         )
       ),
-      style = list(fontFamily = "Jost, sans-serif", fontSize = "1.25rem", align = "center"),
+      style = list(fontFamily = "Jost, sans-serif", fontSize = "1.7rem", align = "center"),
       theme = reactableTheme(backgroundColor = "transparent",
-                             headerStyle = list(fontFamily = "Jost, sans-serif", fontSize = "1.5rem", textAlign = "center")),
+                             headerStyle = list(fontFamily = "Jost, sans-serif", fontSize = "2rem", textAlign = "center")),
       searchable = TRUE
     )
 
