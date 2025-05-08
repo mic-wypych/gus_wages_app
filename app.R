@@ -73,7 +73,7 @@ ui <- fluidPage(
 
         tabPanel("Zmiany pensji w czasie",
         fluidRow(
-          p("Poniższa wykres pokazuje zmiany w czasie średnich wypłat we wszystkich powiatach. Najedź na wykres by zobaczyć poszczególne powiaty, wypłaty i trajektorie zmian. Możesz również wybrać powiaty, które mają być przedstawione na wykresie."),
+          p("Poniższa wykres pokazuje zmiany w czasie średnich wypłat we wszystkich powiatach. Najedź na wykres by zobaczyć poszczególne powiaty, wypłaty i trajektorie zmian. Kliknij dwa razy aby wyłączyć zaznaczenie. Możesz również wybrać powiaty, które mają być przedstawione na wykresie."),
           selectInput("region", "Powiat:", choices = unique(d_powiat$region), multiple = TRUE)
       ),
       fluidRow(
@@ -178,7 +178,7 @@ server <- function(input, output, session) {
           axis.text =  element_text(family = "Jost", size = 10))
 
       ggplotly(time_plot) |>
-        highlight(on = "plotly_hover", color = toRGB("darkgreen")) |>
+        highlight(on = "plotly_hover", off = "plotly_doubleclick", color = toRGB("darkgreen")) |>
           layout(
             paper_bgcolor = 'rgba(0,0,0,0)',  # Transparent paper background
             plot_bgcolor = 'rgba(0,0,0,0)',   # Transparent plot background
