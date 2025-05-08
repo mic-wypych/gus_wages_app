@@ -55,6 +55,9 @@ li:hover {
   border: 0px;
 }
 
+#credits {
+  font-size: .5em;
+}
 
 .map-container {
   width: 70%;

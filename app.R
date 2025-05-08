@@ -44,7 +44,7 @@ ui <- fluidPage(
     sidebarPanel(
       selectInput("rok", "Wybierz rok:", choices = 2002:2023, selected = 2023),
       girafeOutput("hist", width = "100%", height = "400px"),
-      p("Dane dotyczące pensji pobrane z Banku Danych Lokalnych GUS. Dane dotyczące granic geograficznych powiatów porane z bazy wiedzy GIS support")
+      div("Dane dotyczące pensji pobrane z Banku Danych Lokalnych GUS. Dane dotyczące granic geograficznych powiatów pobrane z bazy wiedzy GIS Support", id = "credits")
     ),
     mainPanel(
       tabsetPanel(
