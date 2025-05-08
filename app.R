@@ -218,7 +218,7 @@ server <- function(input, output, session) {
                                   pos_fill = "#4361ee", neg_fill = "#780116") {
       neg_chart <- div(style = list(flex = "1 1 0"))
       pos_chart <- div(style = list(flex = "1 1 0"))
-      width <- (value/max_value)*100
+      width <- paste0(abs(value / max_value) * 100, "%")
 
       if (value < 0) {
         bar <- div(style = list(marginLeft = "0.5rem", background = neg_fill, width = width, height = height, transition = "width 0.8s cubic-bezier(0.42, 0, 0.58, 1)"))
@@ -280,7 +280,7 @@ server <- function(input, output, session) {
           },
           align = "center",
           style = list(fontSize = ".7em"),
-          minWidth = 300
+          minWidth = 100
         ),
         diff_median = colDef(
           name = "różnica od mediany",
@@ -289,6 +289,19 @@ server <- function(input, output, session) {
             div_style <- sprintf("color: %s; font-weight: 900;", color)
             div(style = div_style, value)}
         )
+      ),
+      language = reactableLang(
+        searchPlaceholder = "Szukaj",
+        noData = "nie znaleziono powiatów",
+        pageInfo = "od {rowStart} do {rowEnd} z {rows} powiatów",
+        pagePrevious = "\u276e",
+        pageNext = "\u276f",
+    
+        # Accessible labels for assistive technologies such as screen readers.
+        # These are already set by default, but don't forget to update them when
+        # changing visible text.
+        pagePreviousLabel = "Poprzednia strona",
+        pageNextLabel = "Następna strona"
       ),
       style = list(fontFamily = "Jost, sans-serif", fontSize = "1.7rem", align = "center"),
       theme = reactableTheme(backgroundColor = "transparent",
