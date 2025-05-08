@@ -2,7 +2,7 @@
 
 body {
   font-family: "Jost";
-}container
+}
 
 h1 {
   font-weight: "bold";
@@ -11,6 +11,34 @@ h1 {
 p {
   font-size: 1.5em;
 }
+
+a {
+  color:#004b23;
+  font-weight: bold;
+  border-color:rgba(255, 0, 0, 0);
+}
+
+a:hover {
+  background-color:#ccff33 !important;
+  color:#004b23 !important;
+  border-color:rgba(255, 0, 0, 0);
+}
+
+.well {
+  background-color: rgba(255, 0, 0, 0);
+  border-color:rgba(255, 0, 0, 0);
+  font-size: 1.2em;
+  
+}
+
+.li {
+  background-color: rgba(255, 0, 0, 0);
+  border-color:rgba(255, 0, 0, 0);
+  color:#004b23;
+  
+
+}
+
 
 .map-container {
   width: 75%;
@@ -68,14 +96,14 @@ p {
   overflow: hidden;
 }
 
-/* Limit the bars specifically */
+
 #spinner .loader-bars div {
   width: 8px !important;
   height: 40px !important;
 }
 
 
-/* Optional: avoid stretching */
+
 #spinner .loader {
-  max-width: 100px; /* Cap overall spinner size */
+  max-width: 100px; 
 }

@@ -39,10 +39,10 @@ ui <- fluidPage(
   ),
   titlePanel("Średnie pensje na poziomie Powiatu w latach 2002 - 2023"),
   h4("Ta aplikacja pozwala sprawdzić średnie pensje na poziomie powiatu od 2002 do 2023 roku. Po prawej stronie można wybrać rok dla którego chce się sprawdzić pensje. Poniżej wyświetlą się powiaty z najwyższą i najniższą średnią pensją oraz rozkład średnich pensji w danym roku. W zakładkach można zobaczyć mapę wszystkich powiatów i ich średnie pensje, tabelę porównującą średnie pensje w danym roku oraz zmiany średnich pensji w czasie."),
+  p("\n"),
   sidebarLayout(
     sidebarPanel(
-      "Ta aplikacja pozwala sprawdzić średnie pensje na poziomie powiatów od 2002 do 2023 roku.",
-      selectInput("rok", "Rok:", choices = 2002:2023, selected = 2023),
+      selectInput("rok", "Wybierz rok:", choices = 2002:2023, selected = 2023),
       textOutput("summary"),
       girafeOutput("hist", width = "100%", height = "400px")
     ),
@@ -50,7 +50,6 @@ ui <- fluidPage(
       tabsetPanel(
         tabPanel("Mapa powiatów",
         fluidRow(
-            h4("Mapa pensji w powiatach w wybranym roku"),
             p("Poniższa mapa pozwala sprawdzić średnie pensje w każdym powiecie w wybranym roku. Najedź na powiat by zobaczyć jego średnią pensję")
           
         ),
@@ -63,23 +62,23 @@ ui <- fluidPage(
 
         tabPanel("Pensje na tle innych powiatów",
         fluidRow(
-          h4("Tabela"),
           p("Poniższa tabela pokazuje płace w danym roku na tle innych powiatów i poprzedniego roku. Centyl oznacza jaki procent powiatów w danym roku ma taką samą lub niższą pensję. Na przykład powiat znajdujący się w 50 centylu ma średnią pensją większą lub równą od 50% powiatów w danym roku.")
         
       ),
       fluidRow(
-        reactableOutput("powiatTable")
+       shinycssloaders::withSpinner(reactableOutput("powiatTable"), color = "#004b23",  id = "spinner",
+        type = 5)
       )
         ),
 
         tabPanel("Zmiany pensji w czasie",
         fluidRow(
-          h4("Zmiany w czasie"),
           p("Poniższa wykres pokazuje zmiany w czasie średnich wypłat we wszystkich powiatach. Najedź na wykres by zobaczyć poszczególne powiaty, wypłaty i trajektorie zmian. Możesz również wybrać powiaty, które mają być przedstawione na wykresie."),
           selectInput("region", "Powiat:", choices = unique(d_powiat$region), multiple = TRUE)
       ),
       fluidRow(
-        plotlyOutput("timeplot")
+        shinycssloaders::withSpinner(plotlyOutput("timeplot"), color = "#004b23",  id = "spinner",
+        type = 5)
       )
         )
       ))
@@ -114,13 +113,23 @@ server <- function(input, output, session) {
     }
     
   })
-  
+
   output$hist <- renderGirafe({
+    wage <- d_powiat_filtered() %>% pull(wage)
     hist_plot <- d_powiat_filtered() %>%
       ggplot() +
-      geom_histogram_interactive(aes(x = wage,tooltip =  paste0("[",round(..xmin..,2)," zł : ",round(..xmax..,2),"zł] ilość gmin: ",..count..), group = 1L), bins = 50, fill = "#70e000", color = "green4") +
-      labs(x = "pensja", y = "ilość gmin", title = glue::glue("rozkład pensji w roku {input$rok}")) +
-      theme_minimal()
+      geom_histogram_interactive(aes(x = wage,
+                                     tooltip =  paste0("[",round(..xmin..,2)," zł : ",round(..xmax..,2),"zł] ilość gmin: ",..count..),
+                                     group = 1L),
+                                 bins = 50, fill = "#70e000", color = "green4") +
+      scale_x_continuous(breaks = seq(0, max(wage) + 1000, 2000), labels = paste0(seq(0, max(wage) + 1000, 2000), "zł")) +
+      labs(x = " średnia pensja", y = "ilość gmin", title = glue::glue("rozkład pensji w roku {input$rok}")) +
+      theme_minimal() +
+      theme(plot.title = element_text(family = "Jost", size = 20),
+            axis.title = element_text(family = "Jost", size = 15),
+            axis.text =  element_text(family = "Jost", size = 15),
+            panel.grid.minor = element_blank(),
+            panel.grid.major= element_blank())
     girafe(ggobj = hist_plot, bg = "transparent",
            options = list(opts_hover(css = "fill:#283618; stroke:black;"), opts_hover_inv(css = "opacity:0.4;")))
   })
@@ -133,8 +142,8 @@ server <- function(input, output, session) {
     min_powiat <- data %>% filter(!is.na(wage)) %>% slice_min(wage, n = 1)
     
     glue::glue(
-      "Powiat z najwyższą pensją: {max_powiat$region} z pensją {max_powiat$wage} zł\n
-             Powiat z najmniejszą pensją: {min_powiat$region} z pensją {min_powiat$wage} zł\n"
+      "Powiat z najwyższą pensją: {max_powiat$region} z pensją {max_powiat$wage} zł
+             Powiat z najmniejszą pensją: {min_powiat$region} z pensją {min_powiat$wage} zł"
     )
   })
   
@@ -156,6 +165,8 @@ server <- function(input, output, session) {
       ggplot(aes(x = year, y = wage, group = region)) +
       geom_line(alpha = .1) +
       scale_x_continuous(breaks = 2002:2023) +
+      scale_y_continuous(breaks = seq(0, 12000, 1000), labels = paste0(seq(0, 12000, 1000), "zł")) +
+      labs(x = "rok", y = "średnia pensja") +
       theme_minimal() +
       theme(panel.grid.minor = element_blank(),
             plot.background = element_blank(),
@@ -264,7 +275,8 @@ server <- function(input, output, session) {
       ),
       style = list(fontFamily = "Jost, sans-serif", fontSize = "1.25rem", align = "center"),
       theme = reactableTheme(backgroundColor = "transparent",
-                             headerStyle = list(fontFamily = "Jost, sans-serif", fontSize = "1.5rem", textAlign = "center"))
+                             headerStyle = list(fontFamily = "Jost, sans-serif", fontSize = "1.5rem", textAlign = "center")),
+      searchable = TRUE
     )
 
 
