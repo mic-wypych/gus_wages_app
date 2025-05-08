@@ -38,7 +38,7 @@ ui <- fluidPage(
     direction = c("bottom", "left")
   ),
   titlePanel("Średnie pensje na poziomie Powiatu w latach 2002 - 2023"),
-  
+  h4("Ta aplikacja pozwala sprawdzić średnie pensje na poziomie powiatu od 2002 do 2023 roku. Po prawej stronie można wybrać rok dla którego chce się sprawdzić pensje. Poniżej wyświetlą się powiaty z najwyższą i najniższą średnią pensją oraz rozkład średnich pensji w danym roku. W zakładkach można zobaczyć mapę wszystkich powiatów i ich średnie pensje, tabelę porównującą średnie pensje w danym roku oraz zmiany średnich pensji w czasie."),
   sidebarLayout(
     sidebarPanel(
       "Ta aplikacja pozwala sprawdzić średnie pensje na poziomie powiatów od 2002 do 2023 roku.",
@@ -48,9 +48,9 @@ ui <- fluidPage(
     ),
     mainPanel(
       tabsetPanel(
-        tabPanel("Map",
+        tabPanel("Mapa powiatów",
         fluidRow(
-            h4("Mapa"),
+            h4("Mapa pensji w powiatach w wybranym roku"),
             p("Poniższa mapa pozwala sprawdzić średnie pensje w każdym powiecie w wybranym roku. Najedź na powiat by zobaczyć jego średnią pensję")
           
         ),
@@ -61,10 +61,10 @@ ui <- fluidPage(
         
         ), 
 
-        tabPanel("Table",
+        tabPanel("Pensje na tle innych powiatów",
         fluidRow(
           h4("Tabela"),
-          p("Poniższa tabela coś pokazuje, ale co to kto w sumie wie")
+          p("Poniższa tabela pokazuje płace w danym roku na tle innych powiatów i poprzedniego roku. Centyl oznacza jaki procent powiatów w danym roku ma taką samą lub niższą pensję. Na przykład powiat znajdujący się w 50 centylu ma średnią pensją większą lub równą od 50% powiatów w danym roku.")
         
       ),
       fluidRow(
@@ -72,7 +72,7 @@ ui <- fluidPage(
       )
         ),
 
-        tabPanel("Time",
+        tabPanel("Zmiany pensji w czasie",
         fluidRow(
           h4("Zmiany w czasie"),
           p("Poniższa wykres pokazuje zmiany w czasie średnich wypłat we wszystkich powiatach. Najedź na wykres by zobaczyć poszczególne powiaty, wypłaty i trajektorie zmian. Możesz również wybrać powiaty, które mają być przedstawione na wykresie."),
