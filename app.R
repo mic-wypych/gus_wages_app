@@ -38,19 +38,17 @@ ui <- fluidPage(
     direction = c("bottom", "left")
   ),
   titlePanel("Średnie pensje na poziomie Powiatu w latach 2002 - 2023"),
-  h4("Ta aplikacja pozwala sprawdzić średnie pensje na poziomie powiatu od 2002 do 2023 roku. Po prawej stronie można wybrać rok dla którego chce się sprawdzić pensje. Poniżej wyświetlą się powiaty z najwyższą i najniższą średnią pensją oraz rozkład średnich pensji w danym roku. W zakładkach można zobaczyć mapę wszystkich powiatów i ich średnie pensje, tabelę porównującą średnie pensje w danym roku oraz zmiany średnich pensji w czasie."),
+  div(id = "explainer", h4("Ta aplikacja pozwala sprawdzić średnie pensje na poziomie powiatu od 2002 do 2023 roku. Po prawej stronie można wybrać rok dla którego chce się sprawdzić pensje. Poniżej wyświetlą się powiaty z najwyższą i najniższą średnią pensją oraz rozkład średnich pensji w danym roku. W zakładkach można zobaczyć mapę wszystkich powiatów i ich średnie pensje, tabelę porównującą średnie pensje w danym roku oraz zmiany średnich pensji w czasie.")),
+  p("\n"),
   sidebarLayout(
     sidebarPanel(
-      "Ta aplikacja pozwala sprawdzić średnie pensje na poziomie powiatów od 2002 do 2023 roku.",
-      selectInput("rok", "Rok:", choices = 2002:2023, selected = 2023),
-      textOutput("summary"),
+      selectInput("rok", "Wybierz rok:", choices = 2002:2023, selected = 2023),
       girafeOutput("hist", width = "100%", height = "400px")
     ),
     mainPanel(
       tabsetPanel(
         tabPanel("Mapa powiatów",
         fluidRow(
-            h4("Mapa pensji w powiatach w wybranym roku"),
             p("Poniższa mapa pozwala sprawdzić średnie pensje w każdym powiecie w wybranym roku. Najedź na powiat by zobaczyć jego średnią pensję")
           
         ),
@@ -63,23 +61,23 @@ ui <- fluidPage(
 
         tabPanel("Pensje na tle innych powiatów",
         fluidRow(
-          h4("Tabela"),
           p("Poniższa tabela pokazuje płace w danym roku na tle innych powiatów i poprzedniego roku. Centyl oznacza jaki procent powiatów w danym roku ma taką samą lub niższą pensję. Na przykład powiat znajdujący się w 50 centylu ma średnią pensją większą lub równą od 50% powiatów w danym roku.")
         
       ),
       fluidRow(
-        reactableOutput("powiatTable")
+       shinycssloaders::withSpinner(reactableOutput("powiatTable"), color = "#004b23",
+        type = 5)
       )
         ),
 
         tabPanel("Zmiany pensji w czasie",
         fluidRow(
-          h4("Zmiany w czasie"),
-          p("Poniższa wykres pokazuje zmiany w czasie średnich wypłat we wszystkich powiatach. Najedź na wykres by zobaczyć poszczególne powiaty, wypłaty i trajektorie zmian. Możesz również wybrać powiaty, które mają być przedstawione na wykresie."),
+          p("Poniższa wykres pokazuje zmiany w czasie średnich wypłat we wszystkich powiatach. Najedź na wykres by zobaczyć poszczególne powiaty, wypłaty i trajektorie zmian. Kliknij dwa razy aby wyłączyć zaznaczenie. Możesz również wybrać powiaty, które mają być przedstawione na wykresie."),
           selectInput("region", "Powiat:", choices = unique(d_powiat$region), multiple = TRUE)
       ),
       fluidRow(
-        plotlyOutput("timeplot")
+        shinycssloaders::withSpinner(plotlyOutput("timeplot"), color = "#004b23",
+        type = 5)
       )
         )
       ))
@@ -114,28 +112,27 @@ server <- function(input, output, session) {
     }
     
   })
-  
+
   output$hist <- renderGirafe({
+    wage <- d_powiat_filtered() %>% pull(wage)
     hist_plot <- d_powiat_filtered() %>%
       ggplot() +
-      geom_histogram_interactive(aes(x = wage,tooltip =  paste0("[",round(..xmin..,2)," zł : ",round(..xmax..,2),"zł] ilość gmin: ",..count..), group = 1L), bins = 50, fill = "#70e000", color = "green4") +
-      labs(x = "pensja", y = "ilość gmin", title = glue::glue("rozkład pensji w roku {input$rok}")) +
-      theme_minimal()
+      geom_histogram_interactive(aes(x = wage,
+                                     tooltip =  paste0("[",round(..xmin..,2)," zł : ",round(..xmax..,2),"zł] ilość gmin: ",..count..),
+                                     group = 1L),
+                                 bins = 50, fill = "#70e000", color = "green4") +
+      scale_x_continuous(breaks = round(seq(0, max(wage) + 1000, length.out = 5),-1), labels = paste0(round(seq(0, max(wage) + 1000, length.out = 5),-1), "zł")) +
+      labs(x = " średnia pensja", y = "ilość gmin", title = glue::glue("rozkład pensji w roku {input$rok}")) +
+      theme_minimal() +
+      theme(plot.title = element_text(family = "Jost", size = 20),
+            axis.title = element_text(family = "Jost", size = 15),
+            axis.text =  element_text(family = "Jost", size = 15),
+            axis.ticks.x = element_line(color = "black"),
+            panel.grid.minor = element_blank(),
+            panel.grid.major= element_blank(),
+            plot.title.position = "plot")
     girafe(ggobj = hist_plot, bg = "transparent",
            options = list(opts_hover(css = "fill:#283618; stroke:black;"), opts_hover_inv(css = "opacity:0.4;")))
-  })
-  
-  
-  output$summary <- renderText({
-    data <- d_powiat_filtered()
-    
-    max_powiat <- data %>% filter(!is.na(wage)) %>% slice_max(wage, n = 1)
-    min_powiat <- data %>% filter(!is.na(wage)) %>% slice_min(wage, n = 1)
-    
-    glue::glue(
-      "Powiat z najwyższą pensją: {max_powiat$region} z pensją {max_powiat$wage} zł\n
-             Powiat z najmniejszą pensją: {min_powiat$region} z pensją {min_powiat$wage} zł\n"
-    )
   })
   
   output$inc <- renderUI({
@@ -149,21 +146,27 @@ server <- function(input, output, session) {
   output$timeplot <- renderPlotly({
 
     time_plot <- selected_region() |>
-      pivot_longer(cols = wage_2002:wage_2023, names_to = "year", values_to = "wage") |>
-      select(region, year, wage) |>
-      mutate(year = as.numeric(str_remove_all(year, "wage_"))) |>
-      highlight_key(~region) |>
-      ggplot(aes(x = year, y = wage, group = region)) +
+      pivot_longer(cols = wage_2002:wage_2023, names_to = "rok", values_to = "pensja") |>
+      select(region, rok, pensja) |>
+      rename("powiat" = "region") |>
+      mutate(rok = as.numeric(str_remove_all(rok, "wage_"))) |>
+      highlight_key(~powiat) |>
+      ggplot(aes(x = rok, y = pensja, group = powiat)) +
       geom_line(alpha = .1) +
       scale_x_continuous(breaks = 2002:2023) +
+      scale_y_continuous(breaks = seq(0, 12000, 1000), labels = paste0(seq(0, 12000, 1000), "zł")) +
+      labs(x = "rok", y = "średnia pensja") +
       theme_minimal() +
       theme(panel.grid.minor = element_blank(),
             plot.background = element_blank(),
             panel.background = element_blank(),
-          text = element_text(family = "Jost"))
+          text = element_text(family = "Jost"),
+          plot.title = element_text(family = "Jost", size = 20),
+          axis.title = element_text(family = "Jost", size = 12),
+          axis.text =  element_text(family = "Jost", size = 10))
 
       ggplotly(time_plot) |>
-        highlight(on = "plotly_hover", color = toRGB("darkgreen")) |>
+        highlight(on = "plotly_hover", off = "plotly_doubleclick", color = toRGB("darkgreen")) |>
           layout(
             paper_bgcolor = 'rgba(0,0,0,0)',  # Transparent paper background
             plot_bgcolor = 'rgba(0,0,0,0)',   # Transparent plot background
@@ -200,7 +203,7 @@ server <- function(input, output, session) {
                                   pos_fill = "#4361ee", neg_fill = "#780116") {
       neg_chart <- div(style = list(flex = "1 1 0"))
       pos_chart <- div(style = list(flex = "1 1 0"))
-      width <- (value/max_value)*100
+      width <- paste0(abs(value / max_value) * 100, "%")
 
       if (value < 0) {
         bar <- div(style = list(marginLeft = "0.5rem", background = neg_fill, width = width, height = height, transition = "width 0.8s cubic-bezier(0.42, 0, 0.58, 1)"))
@@ -237,21 +240,31 @@ server <- function(input, output, session) {
     reactable(d_totable,
       defaultColDef = colDef(
         align = "center",  # Center-aligns all columns by default
-        headerStyle = list(textAlign = "center")  # Center-aligns headers
+        headerStyle = list(textAlign = "center"),
+        vAlign = "center",
+        headerVAlign = "bottom" 
       ),
       columns = list(
+        powiat = colDef(name = "powiat",filterable = TRUE,
+        # Filter by case-sensitive text match
+        filterMethod = JS("function(rows, columnId, filterValue) {
+          return rows.filter(function(row) {
+            return row.values[columnId].indexOf(filterValue) !== -1
+          })
+        }")),
         percentile = colDef(name = "Centyl", align = "left", cell = function(value) {
           width <- paste0(value / max(d_totable$percentile) * 100, "%")
           bar_chart(paste0(value, "%"), width = width, background = "#FFFFFF")
         }),
         diff_prev = colDef(
-          name = "Zmiana w stosunku do roku poprzedniego",
+          name = "Zmiana rok do roku",
           defaultSortOrder = "desc",
           cell = function(value) {
-            label <- paste(value, "zł")
+            label <- paste0(value, "zł")
             bar_chart_pos_neg(label, value, max_value = max(abs(d_totable$diff_prev), na.rm = T))
           },
           align = "center",
+          style = list(fontSize = ".7em"),
           minWidth = 100
         ),
         diff_median = colDef(
@@ -262,9 +275,23 @@ server <- function(input, output, session) {
             div(style = div_style, value)}
         )
       ),
-      style = list(fontFamily = "Jost, sans-serif", fontSize = "1.25rem", align = "center"),
+      language = reactableLang(
+        searchPlaceholder = "Szukaj",
+        noData = "nie znaleziono powiatów",
+        pageInfo = "od {rowStart} do {rowEnd} z {rows} powiatów",
+        pagePrevious = "\u276e",
+        pageNext = "\u276f",
+    
+        # Accessible labels for assistive technologies such as screen readers.
+        # These are already set by default, but don't forget to update them when
+        # changing visible text.
+        pagePreviousLabel = "Poprzednia strona",
+        pageNextLabel = "Następna strona"
+      ),
+      style = list(fontFamily = "Jost, sans-serif", fontSize = "1.7rem", align = "center"),
       theme = reactableTheme(backgroundColor = "transparent",
-                             headerStyle = list(fontFamily = "Jost, sans-serif", fontSize = "1.5rem", textAlign = "center"))
+                             borderColor = "black",
+                             headerStyle = list(fontFamily = "Jost, sans-serif", fontSize = "2rem", textAlign = "center"))
     )
 
 
