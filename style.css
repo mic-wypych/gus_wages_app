@@ -22,7 +22,8 @@ a {
 a:hover {
   background-color:#ccff33 !important;
   color:#004b23 !important;
-  border-color:rgba(255, 0, 0, 0);
+  border: 0px !important;
+  
 }
 
 .well {
@@ -32,12 +33,26 @@ a:hover {
   
 }
 
-.li {
+.nav-tabs {
+  border-bottom: 0px !important;
+}
+
+.nav-tabs > li.active > a, 
+    .nav-tabs > li.active > a:focus, 
+    .nav-tabs > li.active > a:hover {
+      background-color:rgb(27, 102, 30) !important; /* Change to desired color */
+      border: 0px;
+      color: white !important; /* Optional: Change text color */
+    }
+
+
+li {
   background-color: rgba(255, 0, 0, 0);
   border-color:rgba(255, 0, 0, 0);
   color:#004b23;
-  
-
+}
+li:hover {
+  border: 0px;
 }
 
 
