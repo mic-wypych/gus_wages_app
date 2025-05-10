@@ -20,20 +20,33 @@ d <- readxl::read_excel("data/dane_gus_powiat.xlsx", sheet = 2, skip = 1) %>%
   rename("code" = `...1`, "region" = `...2`) %>%
   mutate(across(`2002`:`2023`, as.numeric, .names = "wage_{.col}")) 
 
+doubled_regions <- d %>% 
+  count(region) %>% 
+  filter(n > 1) %>%
+  pull(region)
+
+d <- d %>%
+  mutate(voivodship = ifelse(str_detect(region, "^[A-Z]{2}"),region, NA)) %>%
+  fill(voivodship) %>%
+  mutate(region = ifelse(region %in% doubled_regions, paste(region, voivodship) , region))
+
 # Filter for powiat-level data and clean names
 d_powiat <- d %>%
+  select(-voivodship) %>%
   filter(str_detect(region, "Powiat")) %>%
-  mutate(region = tolower(str_remove_all(region, "powiat| m\\. st\\.| m\\.")) %>%
+  mutate(region = tolower(str_remove_all(region, "Powiat| m\\. st\\.| m\\.")) %>%
            trimws()) %>%
-  mutate(region = recode(region, "wałbrzych od 2013" = "wałbrzych",
-                         "wałbrzych do 2002" = "wałbrzych"),
-          wage_2001 = wage_2002)
+  mutate(wage_2001 = wage_2002) %>%
+  group_by(region = if_else(region %in% c("wałbrzych do 2002", "wałbrzych od 2013"), 
+                            "wałbrzych", 
+                            region)) %>%
+  summarize(across(everything(), ~first(na.omit(.))), .groups = "drop")
 
 # UI
 ui <- fluidPage(
   includeCSS("style.css"),
   shinyWidgets::setBackgroundColor(
-    color = c("#70e000", "#ccff33", "#F3FFCC", "white"),
+    color = c("white",  "#F3FFCC", "#ccff33", "#70e000"),
     gradient = "radial",
     direction = c("bottom", "left")
   ),
@@ -101,7 +114,8 @@ server <- function(input, output, session) {
   d_powiat_filtered <- reactive({
     d_powiat %>%
       mutate(wage = as.numeric(replace_na(.data[[selected_wage()]], 0)),
-             previous_wage = as.numeric(replace_na(.data[[previous_wage()]], 0))) # Ensure numeric column
+             previous_wage = as.numeric(replace_na(.data[[previous_wage()]], 0))) %>%
+      filter(wage > 0) # Ensure numeric column
   })
 
   selected_region <- reactive({
@@ -147,12 +161,14 @@ server <- function(input, output, session) {
   output$timeplot <- renderPlotly({
 
     time_plot <- selected_region() |>
+      full_join(powiaty, by = c("code" = "JPT_KOD_JE")) |>
       pivot_longer(cols = wage_2002:wage_2023, names_to = "rok", values_to = "pensja") |>
-      select(region, rok, pensja) |>
+      select(region, rok, pensja, code) |>
       rename("powiat" = "region") |>
       mutate(rok = as.numeric(str_remove_all(rok, "wage_"))) |>
+      filter(pensja > 0) |>
       highlight_key(~powiat) |>
-      ggplot(aes(x = rok, y = pensja, group = powiat)) +
+      ggplot(aes(x = rok, y = pensja, group = factor(code), text =paste0("rok: ", rok, "<br>", "pensja: ", pensja, "<br>", "powiat: ", powiat))) +
       geom_line(alpha = .1) +
       scale_x_continuous(breaks = 2002:2023) +
       scale_y_continuous(breaks = seq(0, 12000, 1000), labels = paste0(seq(0, 12000, 1000), "zł")) +
@@ -166,7 +182,7 @@ server <- function(input, output, session) {
           axis.title = element_text(family = "Jost", size = 12),
           axis.text =  element_text(family = "Jost", size = 10))
 
-      ggplotly(time_plot) |>
+      ggplotly(time_plot, tooltip = "text") |>
         highlight(on = "plotly_hover", off = "plotly_doubleclick", color = toRGB("darkgreen")) |>
           layout(
             paper_bgcolor = 'rgba(0,0,0,0)',  # Transparent paper background
