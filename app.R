@@ -20,8 +20,19 @@ d <- readxl::read_excel("data/dane_gus_powiat.xlsx", sheet = 2, skip = 1) %>%
   rename("code" = `...1`, "region" = `...2`) %>%
   mutate(across(`2002`:`2023`, as.numeric, .names = "wage_{.col}")) 
 
+doubled_regions <- d %>% 
+  count(region) %>% 
+  filter(n > 1) %>%
+  pull(region)
+
+d <- d %>%
+  mutate(voivodship = ifelse(str_detect(region, "^[A-Z]{2}"),region, NA)) %>%
+  fill(voivodship) %>%
+  mutate(region = ifelse(region %in% doubled_regions, paste(region, voivodship) , region))
+
 # Filter for powiat-level data and clean names
 d_powiat <- d %>%
+  select(-voivodship) %>%
   filter(str_detect(region, "Powiat")) %>%
   mutate(region = tolower(str_remove_all(region, "Powiat| m\\. st\\.| m\\.")) %>%
            trimws()) %>%
