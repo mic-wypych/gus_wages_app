@@ -46,9 +46,7 @@ d_powiat <- d %>%
 ui <- fluidPage(
   includeCSS("style.css"),
   shinyWidgets::setBackgroundColor(
-    color = c("white",  "#F3FFCC", "#ccff33", "#70e000"),
-    gradient = "radial",
-    direction = c("bottom", "left")
+    color = c("white")
   ),
   titlePanel("Średnie pensje na poziomie Powiatu w latach 2002 - 2023"),
   div(id = "explainer", h4("Ta aplikacja pozwala sprawdzić średnie pensje na poziomie powiatu od 2002 do 2023 roku. Po prawej stronie można wybrać rok dla którego chce się sprawdzić pensje. Poniżej wyświetlą się powiaty z najwyższą i najniższą średnią pensją oraz rozkład średnich pensji w danym roku. W zakładkach można zobaczyć mapę wszystkich powiatów i ich średnie pensje, tabelę porównującą średnie pensje w danym roku oraz zmiany średnich pensji w czasie.")),
