@@ -9,6 +9,7 @@ library(tidyr)
 library(htmltools)
 library(shinydashboard)
 library(plotly)
+library(shinyjs)
 
 # Load spatial data
 powiaty <- read_sf("data/powiaty.shp") %>%
@@ -45,6 +46,7 @@ d_powiat <- d %>%
 # UI
 ui <- fluidPage(
   includeCSS("style.css"),
+  useShinyjs(),
   shinyWidgets::setBackgroundColor(
     color = c("white")
   ),
@@ -57,42 +59,36 @@ ui <- fluidPage(
       girafeOutput("hist", width = "100%", height = "400px"),
       div("Dane dotyczące pensji pobrane z Banku Danych Lokalnych GUS. Dane dotyczące granic geograficznych powiatów pobrane z bazy wiedzy GIS Support", id = "credits")
     ),
-    mainPanel(
-      tabsetPanel(
-        tabPanel("Mapa powiatów",
-        fluidRow(
-            p("Poniższa mapa pozwala sprawdzić średnie pensje w każdym powiecie w wybranym roku. Najedź na powiat by zobaczyć jego średnią pensję")
-          
-        ),
-        fluidRow(
-            div(class = "map-container",shinycssloaders::withSpinner(uiOutput("inc"), color = "#004b23",  id = "spinner",
-            type = 5))
-        )
-        
-        ), 
-
-        tabPanel("Pensje na tle innych powiatów",
-        fluidRow(
-          p("Poniższa tabela pokazuje płace w danym roku na tle innych powiatów i poprzedniego roku. Centyl oznacza jaki procent powiatów w danym roku ma taką samą lub niższą pensję. Na przykład powiat znajdujący się w 50 centylu ma średnią pensją większą lub równą od 50% powiatów w danym roku.")
-        
-      ),
-      fluidRow(
+    mainPanel( 
+      div(class="map-container", shinycssloaders::withSpinner(uiOutput("inc"), color = "#004b23",  id = "spinner",
+      type = 5)),
+      
+      div(id = "plot1Section", class = "content-section",
        shinycssloaders::withSpinner(reactableOutput("powiatTable"), color = "#004b23",
-        type = 5)
-      )
-        ),
+      type = 5)),
 
-        tabPanel("Zmiany pensji w czasie",
-        fluidRow(
-          p("Poniższa wykres pokazuje zmiany w czasie średnich wypłat we wszystkich powiatach. Najedź na wykres by zobaczyć poszczególne powiaty, wypłaty i trajektorie zmian. Kliknij dwa razy aby wyłączyć zaznaczenie. Możesz również wybrać powiaty, które mają być przedstawione na wykresie."),
-          selectInput("region", "Powiat:", choices = unique(d_powiat$region), multiple = TRUE)
-      ),
-      fluidRow(
-        shinycssloaders::withSpinner(plotlyOutput("timeplot"), color = "#004b23",
-        type = 5)
-      )
+      div(id = "plot2Section", class = "content-section",
+      selectInput("region", "powiat: ", choices = unique(d_powiat$region), multiple = TRUE),
+      shinycssloaders::withSpinner(plotlyOutput("timeplot"), color = "#004b23",
+        type = 5)),
+      
+      
+        div(class = "nav-container",
+        div(class = "bottom-nav",
+            actionButton("plotBtn", label = HTML('<i class="fas fa-chart-bar"></i> Powiaty na tle innych'), 
+                        class = "nav-button"),
+            actionButton("plot2Btn", label = HTML('<i class="fas fa-tachometer-alt"></i> Zmiany w czasie'), 
+                        class = "nav-button")
         )
-      ))
+    )
+
+
+
+
+
+
+
+      )
       
     
   )
@@ -311,6 +307,63 @@ server <- function(input, output, session) {
 
 
 
+  })
+
+  visibilityState <- reactiveValues(
+    plot1Visible = FALSE,
+    plot2Visible = FALSE
+  )
+  
+  # Set initial state
+  observe({
+    # Initialize with no content sections visible
+    shinyjs::hide("plot1Section")
+    shinyjs::hide("plot2Section")
+  }, priority = 1000)
+  
+  # Toggle function to show/hide content
+  toggleContent <- function(section) {
+    # Determine which state to check and toggle
+    stateVar <- switch(section,
+                      "plot1Section" = "plot1Visible",
+                      "plot2Section" = "plot2Visible")
+    
+    # Get current state
+    isVisible <- visibilityState[[stateVar]]
+    
+    # First, hide all sections
+    shinyjs::hide("plot1Section")
+    shinyjs::hide("plot2Section")
+    
+    # Reset all button states
+    shinyjs::removeClass("plotBtn", "active")
+    shinyjs::removeClass("plot2Btn", "active")
+    
+    # Reset all visibility states
+    visibilityState$plot1Visible <- FALSE
+    visibilityState$plot2Visible <- FALSE
+    
+    # If current section was not visible, show it and update state
+    if (!isVisible) {
+      shinyjs::show(section)
+      visibilityState[[stateVar]] <- TRUE
+      
+      # Highlight active button
+      activeBtn <- switch(section,
+                         "plot1Section" = "plotBtn",
+                         "plot2Section" = "plot2Btn")
+      shinyjs::addClass(activeBtn, "active")
+    }
+    # If it was visible, it stays hidden (already hidden above)
+  }
+  
+  # Button click handlers
+  observeEvent(input$plotBtn, {
+    toggleContent("plot1Section")
+  })
+  
+  observeEvent(input$plot2Btn, {
+    toggleContent("plot2Section")
   })
 }
 
