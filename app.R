@@ -51,7 +51,7 @@ ui <- fluidPage(
     color = c("white")
   ),
   titlePanel("Średnie pensje na poziomie Powiatu w latach 2002 - 2023"),
-  div(id = "explainer", h4("Ta aplikacja pozwala sprawdzić średnie pensje na poziomie powiatu od 2002 do 2023 roku. Po prawej stronie można wybrać rok dla którego chce się sprawdzić pensje. Poniżej wyświetlą się powiaty z najwyższą i najniższą średnią pensją oraz rozkład średnich pensji w danym roku. W zakładkach można zobaczyć mapę wszystkich powiatów i ich średnie pensje, tabelę porównującą średnie pensje w danym roku oraz zmiany średnich pensji w czasie.")),
+  div(id = "explainer", p("Ta aplikacja pozwala sprawdzić średnie pensje na poziomie powiatu od 2002 do 2023 roku. Po prawej stronie można wybrać rok dla którego chce się sprawdzić pensje. Poniżej wyświetlą się powiaty z najwyższą i najniższą średnią pensją oraz rozkład średnich pensji w danym roku. W zakładkach można zobaczyć mapę wszystkich powiatów i ich średnie pensje, tabelę porównującą średnie pensje w danym roku oraz zmiany średnich pensji w czasie.")),
   p("\n"),
   sidebarLayout(
     sidebarPanel(
@@ -81,12 +81,6 @@ ui <- fluidPage(
                         class = "nav-button")
         )
     )
-
-
-
-
-
-
 
       )
       
@@ -122,8 +116,17 @@ server <- function(input, output, session) {
     
   })
 
+  highlighted_county <- reactiveVal(NULL)
+
+  observeEvent(input$inc_selected, {
+    highlighted_county(input$inc_selected)
+  })
+
   output$hist <- renderGirafe({
     wage <- d_powiat_filtered() %>% pull(wage)
+
+    current_region <- input$inc_hover
+
     hist_plot <- d_powiat_filtered() %>%
       ggplot() +
       geom_histogram_interactive(aes(x = wage,
@@ -140,6 +143,16 @@ server <- function(input, output, session) {
             panel.grid.minor = element_blank(),
             panel.grid.major= element_blank(),
             plot.title.position = "plot")
+    
+
+    if(!is.null(highlighted_county())) {
+      wage_current <- d_powiat_filtered() %>%
+        filter(JPT_NAZWA_ == highlighted_county()) %>%
+        pull(wage)
+      hist_plot <- hist_plot +
+        geom_vline(xintercept = wage_current, color = "red")
+
+    }      
     girafe(ggobj = hist_plot, bg = "transparent",
            options = list(opts_hover(css = "fill:#283618; stroke:black;"), opts_hover_inv(css = "opacity:0.4;")))
   })
@@ -299,10 +312,10 @@ server <- function(input, output, session) {
         pagePreviousLabel = "Poprzednia strona",
         pageNextLabel = "Następna strona"
       ),
-      style = list(fontFamily = "Jost, sans-serif", fontSize = "1.7rem", align = "center"),
+      style = list(fontFamily = "Jost, sans-serif", fontSize = "1.2rem", align = "center"),
       theme = reactableTheme(backgroundColor = "transparent",
                              borderColor = "black",
-                             headerStyle = list(fontFamily = "Jost, sans-serif", fontSize = "2rem", textAlign = "center"))
+                             headerStyle = list(fontFamily = "Jost, sans-serif", fontSize = "1.5rem", textAlign = "center"))
     )
 
 

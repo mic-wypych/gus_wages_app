@@ -8,10 +8,6 @@ h1 {
   font-weight: "bold";
 }
 
-p {
-  font-size: 1.5em;
-}
-
 a {
   color:#004b23;
   font-weight: bold;
@@ -128,9 +124,10 @@ li:hover {
 }
 
 #explainer {
-  width: 70%;
+  width: 50%;
   margin-bottom: 10px;
   border-bottom: #004b23;
+  border: 10pt;
   border-radius: 15%;
   border-color: #004b23;
 }
@@ -184,7 +181,7 @@ html, body {
   position: absolute;
   top: 20%;
   left: 20%;
-  transform: translate(-20%, -30%);
+  transform: translate(-20%, -25%);
   width: 80%;
   background-color: rgba(255, 255, 255, 0.9);
   border-radius: 10px;
