@@ -10,7 +10,7 @@ library(htmltools)
 library(shinydashboard)
 library(plotly)
 library(shinyjs)
-
+library(rintrojs)
 # Load spatial data
 powiaty <- read_sf("data/powiaty.shp") %>%
   mutate(JPT_NAZWA_ = tolower(str_remove(trimws(JPT_NAZWA_), "powiat")))
@@ -50,11 +50,11 @@ ui <- fluidPage(
   shinyWidgets::setBackgroundColor(
     color = c("white")
   ),
-  titlePanel("Średnie pensje na poziomie Powiatu w latach 2002 - 2023"),
-  div(id = "explainer", p("Ta aplikacja pozwala sprawdzić średnie pensje na poziomie powiatu od 2002 do 2023 roku. Po prawej stronie można wybrać rok dla którego chce się sprawdzić pensje. Poniżej wyświetlą się powiaty z najwyższą i najniższą średnią pensją oraz rozkład średnich pensji w danym roku. W zakładkach można zobaczyć mapę wszystkich powiatów i ich średnie pensje, tabelę porównującą średnie pensje w danym roku oraz zmiany średnich pensji w czasie.")),
-  p("\n"),
+  tags$br(),
   sidebarLayout(
     sidebarPanel(
+      h3("Średnie pensje na poziomie Powiatu w latach 2002 - 2023"),
+      p("Ta aplikacja pozwala sprawdzić średnie pensje na poziomie powiatu od 2002 do 2023 roku. Wybierz rok aby zobaczyć mapę powiatów i rozkład pensji. W zakładkach można zobaczyć porównanie powiatów w danym roku oraz zmiany pensji w czasie"),
       selectInput("rok", "Wybierz rok:", choices = 2002:2023, selected = 2023),
       girafeOutput("hist", width = "100%", height = "400px"),
       div("Dane dotyczące pensji pobrane z Banku Danych Lokalnych GUS. Dane dotyczące granic geograficznych powiatów pobrane z bazy wiedzy GIS Support", id = "credits")
@@ -116,11 +116,6 @@ server <- function(input, output, session) {
     
   })
 
-  highlighted_county <- reactiveVal(NULL)
-
-  observeEvent(input$inc_selected, {
-    highlighted_county(input$inc_selected)
-  })
 
   output$hist <- renderGirafe({
     wage <- d_powiat_filtered() %>% pull(wage)
@@ -131,7 +126,7 @@ server <- function(input, output, session) {
       ggplot() +
       geom_histogram_interactive(aes(x = wage,
                                      tooltip =  paste0("[",round(..xmin..,2)," zł : ",round(..xmax..,2),"zł] ilość gmin: ",..count..),
-                                     group = 1L),
+                                     group = 1L, data_id = ..xmin..),
                                  bins = 50, fill = "#70e000", color = "green4") +
       scale_x_continuous(breaks = round(seq(0, max(wage) + 1000, length.out = 5),-1), labels = paste0(round(seq(0, max(wage) + 1000, length.out = 5),-1), "zł")) +
       labs(x = " średnia pensja", y = "ilość gmin", title = glue::glue("rozkład pensji w roku {input$rok}")) +
@@ -145,16 +140,21 @@ server <- function(input, output, session) {
             plot.title.position = "plot")
     
 
-    if(!is.null(highlighted_county())) {
-      wage_current <- d_powiat_filtered() %>%
-        filter(JPT_NAZWA_ == highlighted_county()) %>%
+    if(!is.null(input$inc_selected)) {
+      d_powiat_full <- powiaty %>%
+        full_join(d_powiat_filtered(), by = c("JPT_KOD_JE" = "code"))
+
+      wage_current <- d_powiat_full %>%
+        filter(JPT_KOD_JE == input$inc_selected) %>%
         pull(wage)
       hist_plot <- hist_plot +
         geom_vline(xintercept = wage_current, color = "red")
 
     }      
-    girafe(ggobj = hist_plot, bg = "transparent",
-           options = list(opts_hover(css = "fill:#283618; stroke:black;"), opts_hover_inv(css = "opacity:0.4;")))
+    girafe(ggobj = hist_plot, bg = "transparent", 
+           options = list(opts_hover(css = "fill:#283618; stroke:black;", reactive = TRUE),
+             opts_hover_inv(css = "opacity:0.4;"),
+             opts_selection(type = "single", only_shiny = TRUE, css = "fill:black; stroke:black;")))
   })
   
   output$inc <- renderUI({
@@ -187,7 +187,7 @@ server <- function(input, output, session) {
           text = element_text(family = "Jost"),
           plot.title = element_text(family = "Jost", size = 20),
           axis.title = element_text(family = "Jost", size = 12),
-          axis.text =  element_text(family = "Jost", size = 10))
+          axis.text =  element_text(family = "Jost", size = 8))
 
       ggplotly(time_plot, tooltip = "text") |>
         highlight(on = "plotly_hover", off = "plotly_doubleclick", color = toRGB("darkgreen")) |>
@@ -312,10 +312,10 @@ server <- function(input, output, session) {
         pagePreviousLabel = "Poprzednia strona",
         pageNextLabel = "Następna strona"
       ),
-      style = list(fontFamily = "Jost, sans-serif", fontSize = "1.2rem", align = "center"),
+      style = list(fontFamily = "Jost, sans-serif", fontSize = "1.5rem", align = "center"),
       theme = reactableTheme(backgroundColor = "transparent",
                              borderColor = "black",
-                             headerStyle = list(fontFamily = "Jost, sans-serif", fontSize = "1.5rem", textAlign = "center"))
+                             headerStyle = list(fontFamily = "Jost, sans-serif", fontSize = "1.7rem", textAlign = "center"))
     )
 
 
