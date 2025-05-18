@@ -51,23 +51,21 @@ ui <- fluidPage(
     color = c("white")
   ),
   tags$br(),
-
-
-  
-  sidebarLayout(
-    sidebarPanel(
-      h3("Średnie pensje w powiatach"),
+  div(class = "sidebar",
+    h3("Średnie pensje w powiatach"),
       p("Ta aplikacja pozwala sprawdzić średnie pensje na poziomie powiatu od 2002 do 2023 roku. Wybierz rok aby zobaczyć mapę powiatów i rozkład pensji. W zakładkach można zobaczyć porównanie powiatów w danym roku oraz zmiany pensji w czasie"),
       tags$br(),
       selectInput("rok", "Wybierz rok:", choices = 2002:2023, selected = 2023),
       girafeOutput("hist", width = "100%", height = "400px"),
       div("Dane dotyczące pensji pobrane z Banku Danych Lokalnych GUS. Dane dotyczące granic geograficznych powiatów pobrane z bazy wiedzy GIS Support", id = "credits")
-    ),
-    mainPanel( 
-      div(class="map-container", shinycssloaders::withSpinner(uiOutput("inc", width = "100%", height = "100vh"), color = "#004b23",  id = "spinner",
-      type = 5)),
-      
-      div(id = "plot1Section", class = "content-section",
+  ),
+  div(class="map-container",
+  div(id = "map", shinycssloaders::withSpinner(uiOutput("inc", width = "100%", height = "100vh"), color = "#004b23",  id = "spinner",
+  type = 5))
+)
+  ,
+
+  div(id = "plot1Section", class = "content-section",
        shinycssloaders::withSpinner(reactableOutput("powiatTable"), color = "#004b23",
       type = 5)),
 
@@ -86,10 +84,6 @@ ui <- fluidPage(
         )
     )
 
-      )
-      
-    
-  )
 )
 
 # Server
@@ -133,7 +127,7 @@ server <- function(input, output, session) {
                                      group = 1L, data_id = ..xmin..),
                                  bins = 50, fill = "#70e000", color = "green4") +
       scale_x_continuous(breaks = round(seq(0, max(wage) + 1000, length.out = 5),-1), labels = paste0(round(seq(0, max(wage) + 1000, length.out = 5),-1), "zł")) +
-      labs(x = " średnia pensja", y = "ilość gmin", title = glue::glue("rozkład pensji w roku {input$rok}")) +
+      labs(x = " średnia pensja", y = "liczba gmin", title = glue::glue("rozkład pensji w roku {input$rok}")) +
       theme_minimal() +
       theme(plot.title = element_text(family = "Jost", size = 20),
             axis.title = element_text(family = "Jost", size = 15),
