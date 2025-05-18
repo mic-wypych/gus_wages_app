@@ -47,18 +47,35 @@ d_powiat <- d %>%
 ui <- fluidPage(
   includeCSS("style.css"),
   useShinyjs(),
+  introjsUI(),
+  tags$head(
+    tags$link(rel = "stylesheet", href = "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css")
+  ),
   shinyWidgets::setBackgroundColor(
     color = c("white")
   ),
-  tags$br(),
   div(class = "sidebar",
+  introBox(
     h3("Średnie pensje w powiatach"),
+    data.step = 1,
+    data.intro = "Ta aplikacja pozwala sprawdzić średnie pensje na poziomie powiatu od 2002 do 2023 roku."
+  ),
       p("Ta aplikacja pozwala sprawdzić średnie pensje na poziomie powiatu od 2002 do 2023 roku. Wybierz rok aby zobaczyć mapę powiatów i rozkład pensji. W zakładkach można zobaczyć porównanie powiatów w danym roku oraz zmiany pensji w czasie"),
       tags$br(),
-      selectInput("rok", "Wybierz rok:", choices = 2002:2023, selected = 2023),
-      girafeOutput("hist", width = "100%", height = "400px"),
+      introBox(
+        selectInput("rok", "Wybierz rok:", choices = 2002:2023, selected = 2023)
+        ,data.step = 2,
+         data.intro = "Tutaj możesz wybrać rok. Mapa zaktualizuje się by wyświetlić pensje dla danego roku."
+      ),
+      introBox(
+        girafeOutput("hist", width = "100%"),
+        data.step = 3,
+        data.intro = "Tutaj wyświetla się rozkład pensji w danym roku. Najedź na wykres by zobaczyć ile gmin mieści się w danym przedziale"
+      ),
       div("Dane dotyczące pensji pobrane z Banku Danych Lokalnych GUS. Dane dotyczące granic geograficznych powiatów pobrane z bazy wiedzy GIS Support", id = "credits")
   ),
+
+  div(id = "help",actionButton("help", label = HTML('<i class="fa-solid fa-question"></i>'))),
   div(id = "map", shinycssloaders::withSpinner(uiOutput("inc", width = "100%", height = "100vh"), color = "#004b23",  id = "spinner",
   type = 5)),
 
@@ -71,20 +88,26 @@ ui <- fluidPage(
       shinycssloaders::withSpinner(plotlyOutput("timeplot"), color = "#004b23",
         type = 5)),
       
-      
+        
         div(class = "nav-container",
+        introBox(
         div(class = "bottom-nav",
-            actionButton("plotBtn", label = HTML('<i class="fas fa-chart-bar"></i> Powiaty na tle innych'), 
+            actionButton("plotBtn", label = HTML('<i class="fas fa-chart-bar"></i>  Powiaty na tle innych'), 
                         class = "nav-button"),
-            actionButton("plot2Btn", label = HTML('<i class="fas fa-tachometer-alt"></i> Zmiany w czasie'), 
+            actionButton("plot2Btn", label = HTML('<i class="fas fa-tachometer-alt"></i>  Zmiany w czasie'), 
                         class = "nav-button")
-        )
+        ),data.step = 4,
+    data.intro = "Tutaj możesz zobaczyć porównanie pensji w danym roku oraz zmiany pensji w czasie"
     )
+  )
 
 )
 
 # Server
 server <- function(input, output, session) {
+  hintjs(session, options = list("hintButtonLabel"="Hope this hint was helpful"),
+  events = list("onhintclose"=I('alert("Wasn\'t that hint helpful")')))
+
   selected_wage <- reactive({
     paste0("wage_", input$rok)
   })
@@ -373,6 +396,14 @@ server <- function(input, output, session) {
   observeEvent(input$plot2Btn, {
     toggleContent("plot2Section")
   })
+
+  observeEvent(input$help,
+    introjs(session, options = list("nextLabel"="Dalej",
+                                    "prevLabel"="Cofnij",
+                                    "doneLabel" = "Koniec",
+                                    "skipLabel"=HTML('<i class="fa-solid fa-xmark"></i>'),
+                                    tooltipClass = "help-tooltip"))
+)
 }
 
 shinyApp(ui = ui, server = server)              
