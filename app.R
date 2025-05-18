@@ -51,6 +51,9 @@ ui <- fluidPage(
     color = c("white")
   ),
   tags$br(),
+
+
+  
   sidebarLayout(
     sidebarPanel(
       h3("Średnie pensje w powiatach"),
@@ -61,7 +64,7 @@ ui <- fluidPage(
       div("Dane dotyczące pensji pobrane z Banku Danych Lokalnych GUS. Dane dotyczące granic geograficznych powiatów pobrane z bazy wiedzy GIS Support", id = "credits")
     ),
     mainPanel( 
-      div(class="map-container", shinycssloaders::withSpinner(uiOutput("inc"), color = "#004b23",  id = "spinner",
+      div(class="map-container", shinycssloaders::withSpinner(uiOutput("inc", width = "100%", height = "100vh"), color = "#004b23",  id = "spinner",
       type = 5)),
       
       div(id = "plot1Section", class = "content-section",
