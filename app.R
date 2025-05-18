@@ -59,11 +59,8 @@ ui <- fluidPage(
       girafeOutput("hist", width = "100%", height = "400px"),
       div("Dane dotyczące pensji pobrane z Banku Danych Lokalnych GUS. Dane dotyczące granic geograficznych powiatów pobrane z bazy wiedzy GIS Support", id = "credits")
   ),
-  div(class="map-container",
   div(id = "map", shinycssloaders::withSpinner(uiOutput("inc", width = "100%", height = "100vh"), color = "#004b23",  id = "spinner",
-  type = 5))
-)
-  ,
+  type = 5)),
 
   div(id = "plot1Section", class = "content-section",
        shinycssloaders::withSpinner(reactableOutput("powiatTable"), color = "#004b23",
