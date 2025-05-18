@@ -27,7 +27,22 @@ a:hover {
   border-color:rgba(255, 0, 0, 0);
   font-size: 1.1em;
   border: 2px solid black;
-  
+  padding-left: 10%;
+  padding-right: 10%;
+}
+
+.item {
+  padding-top: 5% !important;
+  padding-bottom: 5% !important;
+}
+
+.option {
+  padding-top: 5% !important;
+  padding-bottom: 5% !important;
+}
+
+.option.selected {
+  background-color:#004b23;
 }
 
 .nav-tabs {
@@ -221,6 +236,11 @@ html, body {
 .nav-button.active {
   background-color: #2c3e50;
 }
+
+.shiny-input-select {
+  border-radius: 10%;
+}
+
 
 /* Responsive tweaks */
 @media (max-width: 768px) {

@@ -53,8 +53,9 @@ ui <- fluidPage(
   tags$br(),
   sidebarLayout(
     sidebarPanel(
-      h3("Średnie pensje na poziomie Powiatu w latach 2002 - 2023"),
+      h3("Średnie pensje w powiatach"),
       p("Ta aplikacja pozwala sprawdzić średnie pensje na poziomie powiatu od 2002 do 2023 roku. Wybierz rok aby zobaczyć mapę powiatów i rozkład pensji. W zakładkach można zobaczyć porównanie powiatów w danym roku oraz zmiany pensji w czasie"),
+      tags$br(),
       selectInput("rok", "Wybierz rok:", choices = 2002:2023, selected = 2023),
       girafeOutput("hist", width = "100%", height = "400px"),
       div("Dane dotyczące pensji pobrane z Banku Danych Lokalnych GUS. Dane dotyczące granic geograficznych powiatów pobrane z bazy wiedzy GIS Support", id = "credits")
