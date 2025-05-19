@@ -11,6 +11,9 @@ library(shinydashboard)
 library(plotly)
 library(shinyjs)
 library(rintrojs)
+
+
+
 # Load spatial data
 powiaty <- read_sf("data/powiaty.shp") %>%
   mutate(JPT_NAZWA_ = tolower(str_remove(trimws(JPT_NAZWA_), "powiat")))
@@ -149,9 +152,9 @@ server <- function(input, output, session) {
       scale_x_continuous(breaks = round(seq(0, max(wage) + 1000, length.out = 5),-1), labels = paste0(round(seq(0, max(wage) + 1000, length.out = 5),-1), "zł")) +
       labs(x = " średnia pensja", y = "liczba gmin", title = glue::glue("rozkład pensji w roku {input$rok}")) +
       theme_minimal() +
-      theme(plot.title = element_text(family = "Jost", size = 20),
-            axis.title = element_text(family = "Jost", size = 15),
-            axis.text =  element_text(family = "Jost", size = 15),
+      theme(plot.title = element_text(family = "Lato", size = 20),
+            axis.title = element_text(family = "Lato", size = 15),
+            axis.text =  element_text(family = "Lato", size = 15),
             axis.ticks.x = element_line(color = "black"),
             panel.grid.minor = element_blank(),
             panel.grid.major= element_blank(),
