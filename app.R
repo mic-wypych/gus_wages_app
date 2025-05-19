@@ -218,21 +218,6 @@ server <- function(input, output, session) {
         
   })
   
-  # output$mapPlot <- renderGirafe({
-  #   d_powiat_full <- powiaty %>%
-  #     full_join(d_powiat_filtered(), by = c("JPT_NAZWA_" = "region"))
-  #   
-  #   gg <- ggplot(d_powiat_full) +
-  #     geom_sf_interactive(aes(fill = wage, tooltip = paste0(JPT_NAZWA_, ": ", wage), data_id = JPT_NAZWA_)) +
-  #     scale_fill_gradient(low = "#ccff33", high = "#004b23", na.value = "grey80") +  # Handle missing values
-  #     labs(fill = "średnia pensja") +
-  #     theme_void() +
-  #     theme(legend.position = "top")
-  #   
-  #   girafe(ggobj = gg, bg = "transparent",
-  #          options = list(opts_hover(css = "fill:#283618;stroke:black;"), opts_hover_inv(css = "opacity:0.4;")))
-  # })
-  
   output$powiatTable <- renderReactable({
 
     bar_chart <- function(label, width = "100%", height = "1rem", fill = "#17C448", background = NULL) {
