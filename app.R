@@ -9,7 +9,8 @@ library(tidyr)
 library(htmltools)
 library(shinydashboard)
 library(plotly)
-
+library(shinyjs)
+library(rintrojs)
 # Load spatial data
 powiaty <- read_sf("data/powiaty.shp") %>%
   mutate(JPT_NAZWA_ = tolower(str_remove(trimws(JPT_NAZWA_), "powiat")))
@@ -45,63 +46,68 @@ d_powiat <- d %>%
 # UI
 ui <- fluidPage(
   includeCSS("style.css"),
-  shinyWidgets::setBackgroundColor(
-    color = c("white",  "#F3FFCC", "#ccff33", "#70e000"),
-    gradient = "radial",
-    direction = c("bottom", "left")
+  useShinyjs(),
+  introjsUI(),
+  tags$head(
+    tags$link(rel = "stylesheet", href = "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css")
   ),
-  titlePanel("Średnie pensje na poziomie Powiatu w latach 2002 - 2023"),
-  div(id = "explainer", h4("Ta aplikacja pozwala sprawdzić średnie pensje na poziomie powiatu od 2002 do 2023 roku. Po prawej stronie można wybrać rok dla którego chce się sprawdzić pensje. Poniżej wyświetlą się powiaty z najwyższą i najniższą średnią pensją oraz rozkład średnich pensji w danym roku. W zakładkach można zobaczyć mapę wszystkich powiatów i ich średnie pensje, tabelę porównującą średnie pensje w danym roku oraz zmiany średnich pensji w czasie.")),
-  p("\n"),
-  sidebarLayout(
-    sidebarPanel(
-      selectInput("rok", "Wybierz rok:", choices = 2002:2023, selected = 2023),
-      girafeOutput("hist", width = "100%", height = "400px"),
+  shinyWidgets::setBackgroundColor(
+    color = c("white")
+  ),
+  div(class = "sidebar",
+  introBox(
+    h3("Średnie pensje w powiatach"),
+    data.step = 1,
+    data.intro = "Ta aplikacja pozwala sprawdzić średnie pensje na poziomie powiatu od 2002 do 2023 roku."
+  ),
+      p("Ta aplikacja pozwala sprawdzić średnie pensje na poziomie powiatu od 2002 do 2023 roku. Wybierz rok aby zobaczyć mapę powiatów i rozkład pensji. W zakładkach można zobaczyć porównanie powiatów w danym roku oraz zmiany pensji w czasie"),
+      tags$br(),
+      introBox(
+        selectInput("rok", "Wybierz rok:", choices = 2002:2023, selected = 2023)
+        ,data.step = 2,
+         data.intro = "Tutaj możesz wybrać rok. Mapa zaktualizuje się by wyświetlić pensje dla danego roku."
+      ),
+      introBox(
+        girafeOutput("hist", width = "100%"),
+        data.step = 3,
+        data.intro = "Tutaj wyświetla się rozkład pensji w danym roku. Najedź na wykres by zobaczyć ile gmin mieści się w danym przedziale"
+      ),
       div("Dane dotyczące pensji pobrane z Banku Danych Lokalnych GUS. Dane dotyczące granic geograficznych powiatów pobrane z bazy wiedzy GIS Support", id = "credits")
-    ),
-    mainPanel(
-      tabsetPanel(
-        tabPanel("Mapa powiatów",
-        fluidRow(
-            p("Poniższa mapa pozwala sprawdzić średnie pensje w każdym powiecie w wybranym roku. Najedź na powiat by zobaczyć jego średnią pensję")
-          
-        ),
-        fluidRow(
-            div(class = "map-container",shinycssloaders::withSpinner(uiOutput("inc"), color = "#004b23",  id = "spinner",
-            type = 5))
-        )
-        
-        ), 
+  ),
 
-        tabPanel("Pensje na tle innych powiatów",
-        fluidRow(
-          p("Poniższa tabela pokazuje płace w danym roku na tle innych powiatów i poprzedniego roku. Centyl oznacza jaki procent powiatów w danym roku ma taką samą lub niższą pensję. Na przykład powiat znajdujący się w 50 centylu ma średnią pensją większą lub równą od 50% powiatów w danym roku.")
-        
-      ),
-      fluidRow(
+  div(id = "help",actionButton("help", label = HTML('<i class="fa-solid fa-question"></i>'))),
+  div(id = "map", shinycssloaders::withSpinner(uiOutput("inc", width = "100%", height = "100vh"), color = "#004b23",  id = "spinner",
+  type = 5)),
+
+  div(id = "plot1Section", class = "content-section",
        shinycssloaders::withSpinner(reactableOutput("powiatTable"), color = "#004b23",
-        type = 5)
-      )
-        ),
+      type = 5)),
 
-        tabPanel("Zmiany pensji w czasie",
-        fluidRow(
-          p("Poniższa wykres pokazuje zmiany w czasie średnich wypłat we wszystkich powiatach. Najedź na wykres by zobaczyć poszczególne powiaty, wypłaty i trajektorie zmian. Kliknij dwa razy aby wyłączyć zaznaczenie. Możesz również wybrać powiaty, które mają być przedstawione na wykresie."),
-          selectInput("region", "Powiat:", choices = unique(d_powiat$region), multiple = TRUE)
-      ),
-      fluidRow(
-        shinycssloaders::withSpinner(plotlyOutput("timeplot"), color = "#004b23",
-        type = 5)
-      )
-        )
-      ))
+      div(id = "plot2Section", class = "content-section",
+      selectInput("region", "powiat: ", choices = unique(d_powiat$region), multiple = TRUE),
+      shinycssloaders::withSpinner(plotlyOutput("timeplot"), color = "#004b23",
+        type = 5)),
       
-    
+        
+        div(class = "nav-container",
+        introBox(
+        div(class = "bottom-nav",
+            actionButton("plotBtn", label = HTML('<i class="fas fa-chart-bar"></i>  Powiaty na tle innych'), 
+                        class = "nav-button"),
+            actionButton("plot2Btn", label = HTML('<i class="fas fa-tachometer-alt"></i>  Zmiany w czasie'), 
+                        class = "nav-button")
+        ),data.step = 4,
+    data.intro = "Tutaj możesz zobaczyć porównanie pensji w danym roku oraz zmiany pensji w czasie"
+    )
   )
+
 )
 
 # Server
 server <- function(input, output, session) {
+  hintjs(session, options = list("hintButtonLabel"="Hope this hint was helpful"),
+  events = list("onhintclose"=I('alert("Wasn\'t that hint helpful")')))
+
   selected_wage <- reactive({
     paste0("wage_", input$rok)
   })
@@ -128,16 +134,20 @@ server <- function(input, output, session) {
     
   })
 
+
   output$hist <- renderGirafe({
     wage <- d_powiat_filtered() %>% pull(wage)
+
+    current_region <- input$inc_hover
+
     hist_plot <- d_powiat_filtered() %>%
       ggplot() +
       geom_histogram_interactive(aes(x = wage,
                                      tooltip =  paste0("[",round(..xmin..,2)," zł : ",round(..xmax..,2),"zł] ilość gmin: ",..count..),
-                                     group = 1L),
+                                     group = 1L, data_id = ..xmin..),
                                  bins = 50, fill = "#70e000", color = "green4") +
       scale_x_continuous(breaks = round(seq(0, max(wage) + 1000, length.out = 5),-1), labels = paste0(round(seq(0, max(wage) + 1000, length.out = 5),-1), "zł")) +
-      labs(x = " średnia pensja", y = "ilość gmin", title = glue::glue("rozkład pensji w roku {input$rok}")) +
+      labs(x = " średnia pensja", y = "liczba gmin", title = glue::glue("rozkład pensji w roku {input$rok}")) +
       theme_minimal() +
       theme(plot.title = element_text(family = "Jost", size = 20),
             axis.title = element_text(family = "Jost", size = 15),
@@ -146,8 +156,23 @@ server <- function(input, output, session) {
             panel.grid.minor = element_blank(),
             panel.grid.major= element_blank(),
             plot.title.position = "plot")
-    girafe(ggobj = hist_plot, bg = "transparent",
-           options = list(opts_hover(css = "fill:#283618; stroke:black;"), opts_hover_inv(css = "opacity:0.4;")))
+    
+
+    if(!is.null(input$inc_selected)) {
+      d_powiat_full <- powiaty %>%
+        full_join(d_powiat_filtered(), by = c("JPT_KOD_JE" = "code"))
+
+      wage_current <- d_powiat_full %>%
+        filter(JPT_KOD_JE == input$inc_selected) %>%
+        pull(wage)
+      hist_plot <- hist_plot +
+        geom_vline(xintercept = wage_current, color = "red")
+
+    }      
+    girafe(ggobj = hist_plot, bg = "transparent", 
+           options = list(opts_hover(css = "fill:#283618; stroke:black;", reactive = TRUE),
+             opts_hover_inv(css = "opacity:0.4;"),
+             opts_selection(type = "single", only_shiny = TRUE, css = "fill:black; stroke:black;")))
   })
   
   output$inc <- renderUI({
@@ -180,7 +205,7 @@ server <- function(input, output, session) {
           text = element_text(family = "Jost"),
           plot.title = element_text(family = "Jost", size = 20),
           axis.title = element_text(family = "Jost", size = 12),
-          axis.text =  element_text(family = "Jost", size = 10))
+          axis.text =  element_text(family = "Jost", size = 8))
 
       ggplotly(time_plot, tooltip = "text") |>
         highlight(on = "plotly_hover", off = "plotly_doubleclick", color = toRGB("darkgreen")) |>
@@ -192,21 +217,6 @@ server <- function(input, output, session) {
           )
         
   })
-  
-  # output$mapPlot <- renderGirafe({
-  #   d_powiat_full <- powiaty %>%
-  #     full_join(d_powiat_filtered(), by = c("JPT_NAZWA_" = "region"))
-  #   
-  #   gg <- ggplot(d_powiat_full) +
-  #     geom_sf_interactive(aes(fill = wage, tooltip = paste0(JPT_NAZWA_, ": ", wage), data_id = JPT_NAZWA_)) +
-  #     scale_fill_gradient(low = "#ccff33", high = "#004b23", na.value = "grey80") +  # Handle missing values
-  #     labs(fill = "średnia pensja") +
-  #     theme_void() +
-  #     theme(legend.position = "top")
-  #   
-  #   girafe(ggobj = gg, bg = "transparent",
-  #          options = list(opts_hover(css = "fill:#283618;stroke:black;"), opts_hover_inv(css = "opacity:0.4;")))
-  # })
   
   output$powiatTable <- renderReactable({
 
@@ -305,15 +315,80 @@ server <- function(input, output, session) {
         pagePreviousLabel = "Poprzednia strona",
         pageNextLabel = "Następna strona"
       ),
-      style = list(fontFamily = "Jost, sans-serif", fontSize = "1.7rem", align = "center"),
+      style = list(fontFamily = "Jost, sans-serif", fontSize = "1.5rem", align = "center"),
       theme = reactableTheme(backgroundColor = "transparent",
                              borderColor = "black",
-                             headerStyle = list(fontFamily = "Jost, sans-serif", fontSize = "2rem", textAlign = "center"))
+                             headerStyle = list(fontFamily = "Jost, sans-serif", fontSize = "1.7rem", textAlign = "center"))
     )
 
 
 
   })
+
+  visibilityState <- reactiveValues(
+    plot1Visible = FALSE,
+    plot2Visible = FALSE
+  )
+  
+  # Set initial state
+  observe({
+    # Initialize with no content sections visible
+    shinyjs::hide("plot1Section")
+    shinyjs::hide("plot2Section")
+  }, priority = 1000)
+  
+  # Toggle function to show/hide content
+  toggleContent <- function(section) {
+    # Determine which state to check and toggle
+    stateVar <- switch(section,
+                      "plot1Section" = "plot1Visible",
+                      "plot2Section" = "plot2Visible")
+    
+    # Get current state
+    isVisible <- visibilityState[[stateVar]]
+    
+    # First, hide all sections
+    shinyjs::hide("plot1Section")
+    shinyjs::hide("plot2Section")
+    
+    # Reset all button states
+    shinyjs::removeClass("plotBtn", "active")
+    shinyjs::removeClass("plot2Btn", "active")
+    
+    # Reset all visibility states
+    visibilityState$plot1Visible <- FALSE
+    visibilityState$plot2Visible <- FALSE
+    
+    # If current section was not visible, show it and update state
+    if (!isVisible) {
+      shinyjs::show(section)
+      visibilityState[[stateVar]] <- TRUE
+      
+      # Highlight active button
+      activeBtn <- switch(section,
+                         "plot1Section" = "plotBtn",
+                         "plot2Section" = "plot2Btn")
+      shinyjs::addClass(activeBtn, "active")
+    }
+    # If it was visible, it stays hidden (already hidden above)
+  }
+  
+  # Button click handlers
+  observeEvent(input$plotBtn, {
+    toggleContent("plot1Section")
+  })
+  
+  observeEvent(input$plot2Btn, {
+    toggleContent("plot2Section")
+  })
+
+  observeEvent(input$help,
+    introjs(session, options = list("nextLabel"="Dalej",
+                                    "prevLabel"="Cofnij",
+                                    "doneLabel" = "Koniec",
+                                    "skipLabel"=HTML('<i class="fa-solid fa-xmark"></i>'),
+                                    tooltipClass = "help-tooltip"))
+)
 }
 
 shinyApp(ui = ui, server = server)              
