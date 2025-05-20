@@ -205,10 +205,10 @@ server <- function(input, output, session) {
       theme(panel.grid.minor = element_blank(),
             plot.background = element_blank(),
             panel.background = element_blank(),
-          text = element_text(family = "Jost"),
-          plot.title = element_text(family = "Jost", size = 20),
-          axis.title = element_text(family = "Jost", size = 12),
-          axis.text =  element_text(family = "Jost", size = 8))
+          text = element_text(family = "Lato"),
+          plot.title = element_text(family = "Lato", size = 20),
+          axis.title = element_text(family = "Lato", size = 12),
+          axis.text =  element_text(family = "Lato", size = 8))
 
       ggplotly(time_plot, tooltip = "text") |>
         highlight(on = "plotly_hover", off = "plotly_doubleclick", color = toRGB("darkgreen")) |>
@@ -318,10 +318,10 @@ server <- function(input, output, session) {
         pagePreviousLabel = "Poprzednia strona",
         pageNextLabel = "Następna strona"
       ),
-      style = list(fontFamily = "Jost, sans-serif", fontSize = "1.5rem", align = "center"),
+      style = list(fontFamily = "Lato, sans-serif", fontSize = "1rem", align = "center"),
       theme = reactableTheme(backgroundColor = "transparent",
                              borderColor = "black",
-                             headerStyle = list(fontFamily = "Jost, sans-serif", fontSize = "1.7rem", textAlign = "center"))
+                             headerStyle = list(fontFamily = "Jost, sans-serif", fontSize = "1.5rem", textAlign = "center"))
     )
 
 
