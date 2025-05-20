@@ -73,7 +73,7 @@ ui <- fluidPage(
       introBox(
         girafeOutput("hist", width = "100%"),
         data.step = 3,
-        data.intro = "Tutaj wyświetla się rozkład pensji w danym roku. Najedź na wykres by zobaczyć ile gmin mieści się w danym przedziale"
+        data.intro = "Tutaj wyświetla się rozkład pensji w danym roku. Najedź na wykres by zobaczyć ile powiatów mieści się w danym przedziale"
       ),
       div("Dane dotyczące pensji pobrane z Banku Danych Lokalnych GUS. Dane dotyczące granic geograficznych powiatów pobrane z bazy wiedzy GIS Support", id = "credits")
   ),
@@ -150,7 +150,7 @@ server <- function(input, output, session) {
                                      group = 1L, data_id = ..xmin..),
                                  bins = 50, fill = "#70e000", color = "green4") +
       scale_x_continuous(breaks = round(seq(0, max(wage) + 1000, length.out = 5),-1), labels = paste0(round(seq(0, max(wage) + 1000, length.out = 5),-1), "zł")) +
-      labs(x = " średnia pensja", y = "liczba gmin", title = glue::glue("rozkład pensji w roku {input$rok}")) +
+      labs(x = " średnia pensja", y = "liczba powiatów", title = glue::glue("rozkład pensji w roku {input$rok}")) +
       theme_minimal() +
       theme(plot.title = element_text(family = "Lato", size = 20),
             axis.title = element_text(family = "Lato", size = 15),
