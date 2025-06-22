@@ -63,7 +63,7 @@ ui <- fluidPage(
     data.step = 1,
     data.intro = "Ta aplikacja pozwala sprawdzić średnie pensje na poziomie powiatu od 2002 do 2023 roku."
   ),
-      p("Ta aplikacja pozwala sprawdzić średnie pensje na poziomie powiatu od 2002 do 2023 roku. Wybierz rok aby zobaczyć mapę powiatów i rozkład pensji. W zakładkach można zobaczyć porównanie powiatów w danym roku oraz zmiany pensji w czasie"),
+      div(class = "decs",p("Ta aplikacja pozwala sprawdzić średnie pensje na poziomie powiatu od 2002 do 2023 roku. Wybierz rok aby zobaczyć mapę powiatów i rozkład pensji. W zakładkach można zobaczyć porównanie powiatów w danym roku oraz zmiany pensji w czasie")),
       tags$br(),
       introBox(
         selectInput("rok", "Wybierz rok:", choices = 2002:2023, selected = 2023)
