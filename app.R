@@ -146,7 +146,7 @@ server <- function(input, output, session) {
     hist_plot <- d_powiat_filtered() %>%
       ggplot() +
       geom_histogram_interactive(aes(x = wage,
-                                     tooltip =  paste0("[",round(..xmin..,2)," zł : ",round(..xmax..,2),"zł] ilość gmin: ",..count..),
+                                     tooltip =  paste0("[",round(..xmin..,2)," zł : ",round(..xmax..,2),"zł] ilość powiatów: ",..count..),
                                      group = 1L, data_id = ..xmin..),
                                  bins = 50, fill = "#70e000", color = "green4") +
       scale_x_continuous(breaks = round(seq(0, max(wage) + 1000, length.out = 5),-1), labels = paste0(round(seq(0, max(wage) + 1000, length.out = 5),-1), "zł")) +
@@ -205,7 +205,6 @@ server <- function(input, output, session) {
       theme(panel.grid.minor = element_blank(),
             plot.background = element_blank(),
             panel.background = element_blank(),
-          text = element_text(family = "Lato"),
           plot.title = element_text(family = "Lato", size = 20),
           axis.title = element_text(family = "Lato", size = 12),
           axis.text =  element_text(family = "Lato", size = 8))
@@ -335,7 +334,6 @@ server <- function(input, output, session) {
   
   # Set initial state
   observe({
-    # Initialize with no content sections visible
     shinyjs::hide("plot1Section")
     shinyjs::hide("plot2Section")
   }, priority = 1000)
@@ -373,7 +371,7 @@ server <- function(input, output, session) {
                          "plot2Section" = "plot2Btn")
       shinyjs::addClass(activeBtn, "active")
     }
-    # If it was visible, it stays hidden (already hidden above)
+
   }
   
   # Button click handlers
@@ -393,5 +391,7 @@ server <- function(input, output, session) {
                                     tooltipClass = "help-tooltip"))
 )
 }
+
+
 
 shinyApp(ui = ui, server = server)              

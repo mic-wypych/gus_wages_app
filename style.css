@@ -20,6 +20,11 @@ a {
   border: 2px solid black;
   padding-left: 10%;
   padding-right: 10%;
+  width: 14vw;
+  height: 80vh;
+  left: 2vw;
+  top: 2vw;
+
 }
 
 .item {
