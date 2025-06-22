@@ -193,10 +193,11 @@ html, body {
 
 /* Responsive tweaks */
 @media (max-width: 768px) {
-  .sidebar {
-    width: 200px;
-  }
   
+  h3 {
+    font-size: .7em;
+  }
+
   .histogram-box {
     width: 250px;
     height: 200px;
@@ -205,10 +206,37 @@ html, body {
   .content-section {
     width: 90%;
   }
-}
 
-@media (max-width: 480px) {
-    .desc {
+   .desc {
         display: none;
     }
+
+  .sidebar {
+  background-color: rgba(255, 255, 255, 0.9);
+  border-color:rgba(255, 0, 0, 0);
+  font-size: 1.1em;
+  border: 2px solid black;
+  padding-left: 1%;
+  padding-top: 1%;
+  padding-right: 1%;
+  padding-bottom: 1%;
+  width: 20vw;
+  height: 50vh;
+  left: 2vw;
+  top: 2vw;
+  }
+
+  .well {
+  background-color: rgba(255, 255, 255, 0.9);
+  border-color:rgba(255, 0, 0, 0);
+  font-size: 1.1em;
+  border: 2px solid black;
+  padding-left: 1%;
+  padding-right: 1%;
+  width: 15vw;
+  height: 30vh;
+  left: 2vw;
+  top: 2vw;
+  }
+
 }
